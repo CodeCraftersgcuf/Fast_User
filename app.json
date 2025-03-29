@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Logistics App",
+    "slug": "logistics-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#9C27B0"
+    },
+    "newArchEnabled": true,
+    
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+   
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.deliveryapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#9C27B0"
+      },
+      "package": "com.yourcompany.deliveryapp",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+
+      
+      "config": {
+        "googleMaps": {
+          "apiKey": "https://maps.googleapis.com/maps/api/js?key=AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao&libraries=places&callback=initMap"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,223 @@
+
+
+"use client"
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import Icon from "react-native-vector-icons/Ionicons"
+import { colors } from "../../constants/colors"
+
+// Define the delivery item type
+interface DeliveryItem {
+  id: string
+  status: "Scheduled"
+  fromAddress: string
+  toAddress: string
+  orderTime: string
+  deliveryTime: string
+  scheduledDate: string
+  scheduledTime: string
+}
+
+const ScheduledDeliveries = () => {
+  const navigation = useNavigation()
+
+  // Sample data
+  const deliveries: DeliveryItem[] = [
+    {
+      id: "ORD-12ESCJK3K",
+      status: "Scheduled",
+      fromAddress: "No 1, abcd street...",
+      toAddress: "No 1, abcd street....",
+      orderTime: "11:24 AM",
+      deliveryTime: "Scheduled",
+      scheduledDate: "23rd Feb,2025",
+      scheduledTime: "11:24 AM",
+    },
+    {
+      id: "ORD-12ESCJK3K",
+      status: "Scheduled",
+      fromAddress: "No 1, abcd street...",
+      toAddress: "No 1, abcd street....",
+      orderTime: "11:24 AM",
+      deliveryTime: "Scheduled",
+      scheduledDate: "23rd Feb,2025",
+      scheduledTime: "11:24 AM",
+    },
+  ]
+
+  const handleDeliveryPress = (delivery: DeliveryItem) => {
+    navigation.navigate("DeliveryDetails", { deliveryId: delivery.id })
+  }
+
+  const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (
+    <TouchableOpacity style={styles.deliveryCard} onPress={() => handleDeliveryPress(item)}>
+      <View style={styles.deliveryHeader}>
+        <Text style={styles.orderId}>{item.id}</Text>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>{item.status}</Text>
+        </View>
+      </View>
+
+      <View style={styles.addressContainer}>
+        <View style={styles.addressColumn}>
+          <Text style={styles.addressLabel}>From</Text>
+          <Text style={styles.addressText} numberOfLines={1}>
+            {item.fromAddress}
+          </Text>
+
+          <Text style={styles.timeLabel}>Time of Order</Text>
+          <Text style={styles.timeText}>{item.orderTime}</Text>
+        </View>
+
+        <View style={styles.addressColumn}>
+          <Text style={styles.addressLabel}>To</Text>
+          <Text style={styles.addressText} numberOfLines={1}>
+            {item.toAddress}
+          </Text>
+
+          <Text style={styles.timeLabel}>Estimated Delivery</Text>
+          <Text style={styles.timeText}>{item.deliveryTime}</Text>
+        </View>
+      </View>
+
+      <View style={styles.scheduledContainer}>
+        <Text style={styles.scheduledTitle}>Ride Scheduled</Text>
+        <View style={styles.scheduledDetails}>
+          <View style={styles.dateContainer}>
+            <Icon name="calendar-outline" size={20} color={colors.primary} />
+            <Text style={styles.scheduledText}>{item.scheduledDate}</Text>
+          </View>
+          <View style={styles.timeContainer}>
+            <Icon name="time-outline" size={20} color={colors.primary} />
+            <Text style={styles.scheduledText}>{item.scheduledTime}</Text>
+          </View>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.proceedButton}>
+        <Text style={styles.proceedButtonText}>Proceed</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  )
+
+  return (
+    <FlatList
+      data={deliveries}
+      renderItem={renderDeliveryItem}
+      keyExtractor={(item, index) => `${item.id}-${index}`}
+      contentContainerStyle={styles.listContainer}
+      showsVerticalScrollIndicator={false}
+    />
+  )
+}
+
+const styles = StyleSheet.create({
+  listContainer: {
+    padding: 16,
+  },
+  deliveryCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  deliveryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  orderId: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#000000",
+  },
+  statusBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#FFFFFF",
+  },
+  addressContainer: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  addressColumn: {
+    flex: 1,
+  },
+  addressLabel: {
+    fontSize: 12,
+    color: "#666666",
+    marginBottom: 4,
+  },
+  addressText: {
+    fontSize: 14,
+    color: "#000000",
+    marginBottom: 12,
+  },
+  timeLabel: {
+    fontSize: 12,
+    color: "#666666",
+    marginBottom: 4,
+  },
+  timeText: {
+    fontSize: 14,
+    color: "#000000",
+  },
+  scheduledContainer: {
+    backgroundColor: "#F5F5F5",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  scheduledTitle: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  scheduledDetails: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  scheduledText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#000000",
+    marginLeft: 8,
+  },
+  proceedButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  proceedButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+})
+
+export default ScheduledDeliveries
+
