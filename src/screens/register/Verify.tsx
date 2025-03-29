@@ -11,10 +11,12 @@ import { GradientBackground } from "./../../components/BackgroundGradient";
 import { CodeInput } from "./../../components/CodeInput";
 import { Button } from "./../../components/Button";
 import { colors } from "./../../constants/colors";
+import { useAuth } from "../../contexts/AuthContext"; // adjust path
 
 const Verify = () => {
   const [timeLeft, setTimeLeft] = useState(59);
   const navigation = useNavigation();
+  const { login } = useAuth();
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -54,7 +56,9 @@ const Verify = () => {
             {/* <Button title="Proceed" onPress={() => {RideDetails}} /> */}
             <Button
               title="Proceed"
-              onPress={() => navigation.navigate("User")}
+              onPress={() => {
+                login(); // 🔥 Triggers `MainApp` to show
+              }}
             />
 
             <Text style={styles.timerText}>

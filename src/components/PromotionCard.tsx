@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
     marginVertical: theme.spacing.md,
+    height:150,
   },
   tagContainer: {
     backgroundColor: colors.white,
@@ -55,11 +56,11 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
   },
   textContainer: {
-    flex: 1,
     paddingRight: theme.spacing.md,
+    width:220,
   },
   title: {
-    fontSize: theme.fontSizes.lg,
+    fontSize: theme.fontSizes.md,
     fontWeight: "700",
     color: colors.white,
     marginBottom: theme.spacing.xs,
@@ -70,9 +71,12 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   image: {
-    width: 80,
-    height: 80,
-    resizeMode: "contain",
+    width: 100,
+    height: 100,
+    position: 'absolute',
+    top:-10,
+    right:5,
+
   },
 })
 

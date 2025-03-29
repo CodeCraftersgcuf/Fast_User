@@ -72,7 +72,7 @@ export default function User() {
   const handleNotificationsPress = () => {
     navigation.navigate("Notification")
   }
-  
+
 
   const handleParcelPress = (action: string) => {
     if (action === "Schedule") {
@@ -137,7 +137,9 @@ export default function User() {
 
           {/* Balance */}
           <View style={styles.balanceContainer}>
-            <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+            <View>
+              <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+            </View>
             <View style={styles.balanceActions}>
               <TouchableOpacity
                 style={styles.balanceButton}
@@ -184,7 +186,7 @@ export default function User() {
               onMomentumScrollEnd={(event) => {
                 const slideIndex = Math.floor(
                   event.nativeEvent.contentOffset.x /
-                    event.nativeEvent.layoutMeasurement.width
+                  event.nativeEvent.layoutMeasurement.width
                 );
                 setActiveSlide(slideIndex);
               }}
@@ -216,15 +218,15 @@ export default function User() {
           {/* Pickup Locations */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Pickup Locations</Text>
-    
-           <View style={styles.locationsContainer}>
+
+            <View style={styles.locationsContainer}>
               <View style={styles.locationsButton}>
                 <LocationCard
                   type="Home"
                   address="Set home address"
                   onPress={() => handleLocationPress("Home")}
                 />
-               </View>
+              </View>
 
               <View style={styles.locationsButton}>
                 <LocationCard
@@ -232,9 +234,9 @@ export default function User() {
                   address="Set work address"
                   onPress={() => handleLocationPress("Work")}
                 />
-               </View>
-             </View>
-          
+              </View>
+            </View>
+
           </View>
 
           {/* Active Deliveries */}
@@ -317,6 +319,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     gap: theme.spacing.lg,
+    justifyContent:'space-between',
   },
   balanceAmount: {
     fontSize: 35,

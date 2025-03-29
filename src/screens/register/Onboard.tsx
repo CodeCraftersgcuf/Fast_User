@@ -56,7 +56,7 @@ const Onboard = () => {
           animated: true,
         });
       }
-    }, 2000); 
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [currentScreen]);
@@ -64,7 +64,7 @@ const Onboard = () => {
   const handleSkip = () => {
     navigation.navigate('Login');
   };
-  
+
 
   const handleProceed = () => {
     if (currentScreen === screens.length - 1) {
@@ -93,10 +93,20 @@ const Onboard = () => {
   return (
     <GradientBackground>
       <SafeAreaView style={styles.safeArea}>
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
-
+        <View style={styles.pagination}>
+          {screens.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.paginationDot,
+                index === currentScreen && styles.paginationDotActive,
+              ]}
+            />
+          ))}
+        </View>
         <FlatList
           ref={flatListRef}
           data={screens}
@@ -113,17 +123,7 @@ const Onboard = () => {
           keyExtractor={(item) => item.id.toString()}
         />
 
-        <View style={styles.pagination}>
-          {screens.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.paginationDot,
-                index === currentScreen && styles.paginationDotActive,
-              ]}
-            />
-          ))}
-        </View>
+
       </SafeAreaView>
     </GradientBackground>
   );
@@ -159,8 +159,9 @@ const styles = StyleSheet.create({
   pagination: {
     flexDirection: 'row',
     position: 'absolute',
-    bottom: 200,
+    bottom: 220,
     alignSelf: 'center',
+    zIndex:123,
   },
   paginationDot: {
     width: 8,

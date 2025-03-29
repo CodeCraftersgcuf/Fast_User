@@ -7,6 +7,10 @@ import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 
+
+import { useAuth } from "../contexts/AuthContext"
+
+
 // Import the TabBar component
 import { TabBar } from "../components/TabBar"
 
@@ -364,10 +368,10 @@ function AuthStack() {
 }
 
 export function Navigation() {
-  const [isAuthenticated] = useState(true) // Replace with actual auth state
   const [currentTab, setCurrentTab] = useState("Home")
   const [hideTabBar, setHideTabBar] = useState(false)
   const navigationRef = useRef<any>(null)
+  const { isAuthenticated } = useAuth();
 
   // Function to handle tab press
   const handleTabPress = (tabName: string) => {
