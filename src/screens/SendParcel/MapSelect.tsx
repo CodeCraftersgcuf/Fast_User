@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     position: "absolute",
-    bottom: 100,
+    bottom: 0,
     left: 0,
     right: 0,
   },

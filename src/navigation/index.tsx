@@ -386,33 +386,53 @@ export function Navigation() {
 
   // Function to handle navigation state changes
   const handleNavigationStateChange = (state: any) => {
-    if (!state) return
+    if (!state) return;
 
-    // Get the current active route
-    const currentRoute = state.routes[state.index]
+    const getActiveRouteName = (route: any): string => {
+      if (!route) return '';
+      if (route.state) return getActiveRouteName(route.state.routes[route.state.index]);
+      return route.name;
+    };
 
-    // Update the current tab
+    const currentRoute = state.routes[state.index];
+    const activeScreen = getActiveRouteName(currentRoute);
+
+    // Update current tab if we're on a main tab screen
     if (["Home", "Deliveries", "Add", "Chat", "Settings"].includes(currentRoute.name)) {
-      setCurrentTab(currentRoute.name)
+      setCurrentTab(currentRoute.name);
     }
 
-    // Check if we're in the Add tab (SendParcel stack)
-    if (currentRoute.name === "Add") {
-      // We're in the SendParcel stack, so hide the tab bar
-      setHideTabBar(true)
-    } else if (currentRoute.name === "Deliveries") {
-      // We're in the Deliveries stack, so hide the tab bar
-      setHideTabBar(true)
-    } else {
-      // We're not in the SendParcel or Deliveries stack, so show the tab bar
-      setHideTabBar(false)
-    }
+    // Determine when to hide tab bar
+    const shouldHideTabBar = [
+      "Add",
+      "Deliveries",
+      "Wallet",
+      "Support",
+      "Address",
+      "Notifications",
+      "FAQs",
+      "EditProfile",
+      "LocationSelect",
+      "MapSelect",
+      "ScheduleParcel",
+      "SenderReceiverDetails",
+      "ParcelDetails",
+      "PaymentDetails",
+      "SearchRiders",
+      "RiderBid",
+      "RidesSummary",
+      "RideHistory",
+      "RidesDetails",
+      "DeliveredSummary",
 
-    // Also check for params that might indicate we should hide the tab bar
-    if (currentRoute.params && currentRoute.params.hideTabBar) {
-      setHideTabBar(true)
-    }
-  }
+
+
+
+    ].includes(activeScreen);
+
+    setHideTabBar(shouldHideTabBar);
+  };
+
 
   // Listen for route params changes
   useEffect(() => {
