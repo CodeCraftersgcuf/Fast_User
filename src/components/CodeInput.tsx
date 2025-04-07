@@ -51,8 +51,8 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   input: {
-    width: 50,
-    height: 50,
+    width: 45,
+    height: 45,
     borderRadius: 8,
     backgroundColor: colors.white,
     textAlign: 'center',

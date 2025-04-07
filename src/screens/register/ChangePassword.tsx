@@ -14,6 +14,12 @@ import { CodeInput } from './../../components/CodeInput';
 import { Button } from './../../components/Button';
 import { colors } from './../../constants/colors';
 
+
+//Code Related to the integration:
+import { forgotPassword, verifyPasswordOTP, resetPassword } from './../../utils/mutations/authMutations';
+import { useMutation } from '@tanstack/react-query';
+import Toast from "react-native-toast-message";
+
 type Step = 'email' | 'code' | 'password';
 
 const ChangePassword = () => {
@@ -22,6 +28,8 @@ const ChangePassword = () => {
   const [timeLeft, setTimeLeft] = useState(59);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+
   const navigation = useNavigation();
 
   React.useEffect(() => {
@@ -33,9 +41,67 @@ const ChangePassword = () => {
 
   const handleCodeComplete = (code: string) => {
     console.log('Code entered:', code);
-    setCurrentStep('password');
+    setOtpCode(code); // Save to state
   };
 
+  const { mutate: mutateForgot, isPending: isSendingEmail } = useMutation({
+    mutationFn: (data: { email: string }) => forgotPassword(data),
+    onSuccess: (response) => {
+      console.log("✅ Email Sent:", response);
+      Toast.show({
+        type: "success",
+        text1: "Email Sent",
+        text2: "OTP sent to your email",
+      });
+      setTimeLeft(59);
+      setCurrentStep("code");
+    },
+    onError: () => {
+      Toast.show({
+        type: "error",
+        text1: "Failed",
+        text2: "Email not found or server error",
+      });
+    },
+  });
+
+  const { mutate: mutateVerify, isPending: isVerifyingCode } = useMutation({
+    mutationFn: (data: { email: string; otp: string }) => verifyPasswordOTP(data),
+    onSuccess: () => {
+      Toast.show({
+        type: "success",
+        text1: "OTP Verified",
+        text2: "You can now reset your password",
+      });
+      setCurrentStep("password");
+    },
+    onError: () => {
+      Toast.show({
+        type: "error",
+        text1: "Invalid OTP",
+        text2: "Please try again",
+      });
+    },
+  });
+  const { mutate: mutateReset, isPending: isResetting } = useMutation({
+    mutationFn: (data: { email: string; password: string, password_confirmation: string }) => resetPassword(data),
+    onSuccess: (response) => {
+      console.log("");
+      Toast.show({
+        type: "success",
+        text1: "Password Updated",
+        text2: "You can now log in",
+      });
+      navigation.navigate("Login" as never);
+    },
+    onError: () => {
+      Toast.show({
+        type: "error",
+        text1: "Reset Failed",
+        text2: "Something went wrong",
+      });
+    },
+  });
   const renderStep = () => {
     switch (currentStep) {
       case 'email':
@@ -43,7 +109,7 @@ const ChangePassword = () => {
           <>
             <Text style={styles.subtitle}>Input email address</Text>
             <View style={styles.form}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.goBack}
                 onPress={() => navigation.goBack()}
               >
@@ -58,9 +124,10 @@ const ChangePassword = () => {
                 keyboardType="email-address"
               />
 
-              <Button 
-                title="Proceed" 
-                onPress={() => setCurrentStep('code')}
+              <Button
+                title="Proceed"
+                onPress={() => mutateForgot({ email })}
+                disabled={!email || isSendingEmail}
               />
             </View>
           </>
@@ -73,18 +140,19 @@ const ChangePassword = () => {
               Input the code sent to your registered email
             </Text>
             <View style={styles.form}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.goBack}
                 onPress={() => setCurrentStep('email')}
               >
                 <Text style={styles.goBackText}>Go back</Text>
               </TouchableOpacity>
 
-              <CodeInput length={5} onCodeComplete={handleCodeComplete} />
+              <CodeInput length={6} onCodeComplete={handleCodeComplete} />
 
-              <Button 
-                title="Proceed" 
-                onPress={() => setCurrentStep('password')}
+              <Button
+                title="Proceed"
+                onPress={() => mutateVerify({ email, otp: otpCode })}
+                disabled={otpCode.length !== 6 || isVerifyingCode}
               />
 
               <Text style={styles.timerText}>
@@ -104,7 +172,7 @@ const ChangePassword = () => {
           <>
             <Text style={styles.subtitle}>Reset your password</Text>
             <View style={styles.form}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.goBack}
                 onPress={() => setCurrentStep('code')}
               >
@@ -125,10 +193,21 @@ const ChangePassword = () => {
                 placeholder="Re-enter new password"
               />
 
-              <Button 
-                title="Proceed" 
-                onPress={() => navigation.navigate('Login')}
+              <Button
+                title="Proceed"
+                onPress={() => {
+                  if (newPassword !== confirmPassword) {
+                    Toast.show({
+                      type: "error",
+                      text1: "Passwords do not match",
+                    });
+                    return;
+                  }
+                  mutateReset({ email, password: newPassword, password_confirmation: newPassword });
+                }}
+                disabled={!newPassword || !confirmPassword || isResetting}
               />
+
             </View>
           </>
         );
@@ -142,6 +221,7 @@ const ChangePassword = () => {
           <Text style={styles.title}>Change Password</Text>
           {renderStep()}
         </View>
+        <Toast />
       </SafeAreaView>
     </GradientBackground>
   );

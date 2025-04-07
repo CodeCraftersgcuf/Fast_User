@@ -15,6 +15,20 @@ import { colors } from "./../../constants/colors";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../contexts/AuthContext"; // adjust path
 
+
+//Code Related to the integration
+import { loginUser } from "../../utils/mutations/authMutations";
+import { useMutation } from "@tanstack/react-query";
+import { saveToStorage } from "../../utils/storage";
+import Toast from "react-native-toast-message";
+import { IUserLoginResponse } from "../../utils/mutations/authMutations";
+
+type LoginInput = {
+  email: string;
+  password: string;
+};
+
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -22,6 +36,53 @@ const Login = () => {
   const navigation = useNavigation();
   const { login } = useAuth();
 
+  
+  const { isPending: isPendingLogin, mutate: mutateLogin } = useMutation<
+    IUserLoginResponse,
+    Error,
+    LoginInput
+  >({
+    mutationFn: (data) => loginUser(data),
+    onSuccess: async (response) => {
+      console.log("✅ Login Successful:", response);
+
+      const { token, user } = response.data;
+
+      try {
+        await saveToStorage("authToken", token);
+        await saveToStorage("user", {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          is_active: user.is_active,
+        });
+
+        Toast.show({
+          type: "success",
+          text1: "Login Successful",
+          text2: `Welcome back, ${user.name}! 👋`,
+        });
+
+        login(); // 🔥 Triggers MainApp
+      } catch (err) {
+        console.error("❌ Error saving login data:", err);
+        Toast.show({
+          type: "error",
+          text1: "Storage Error",
+          text2: "Something went wrong while saving login info",
+        });
+      }
+    },
+    onError: (error) => {
+      console.error("❌ Login Failed:", error);
+      Toast.show({
+        type: "error",
+        text1: "Login Failed",
+        text2: "Invalid credentials or server error",
+      });
+    },
+  });
   return (
     <GradientBackground>
       <SafeAreaView style={styles.container}>
@@ -68,14 +129,17 @@ const Login = () => {
             </View>
 
 
-
             <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => {
-                login(); // 🔥 Triggers `MainApp` to show
-              }}
+              style={[
+                styles.loginButton,
+                !(email && password) && { backgroundColor: "#ccc" }, // Disabled style
+              ]}
+              onPress={() => mutateLogin({ email, password })}
+              disabled={!email || !password || isPendingLogin}
             >
-              <Text style={styles.loginButtonText}>Login</Text>
+              <Text style={styles.loginButtonText}>
+                {isPendingLogin ? "Logging in..." : "Login"}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -104,6 +168,7 @@ const Login = () => {
             </View>
           </View>
         </View>
+        <Toast />
       </SafeAreaView>
     </GradientBackground>
   );
@@ -197,8 +262,7 @@ const styles = StyleSheet.create({
   },
   registerContainer: {
     flexDirection: "row",
-    justifyContent: "left",
-    alignItems: "left",
+
     marginBottom: 20,
     marginTop: 15,
   },

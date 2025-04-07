@@ -13,10 +13,22 @@ import { Button } from "./../../components/Button";
 import { colors } from "./../../constants/colors";
 import { useAuth } from "../../contexts/AuthContext"; // adjust path
 
+//Code Related to the integration
+
+import { verifyEmailOTP, resendOtp } from "./../../utils/mutations/authMutations";
+import { useMutation } from "@tanstack/react-query";
+import Toast from "react-native-toast-message";
+import { useRoute } from "@react-navigation/native"; // 👈 to get params
+
 const Verify = () => {
   const [timeLeft, setTimeLeft] = useState(59);
+  const [otpCode, setOtpCode] = useState('');
+
   const navigation = useNavigation();
   const { login } = useAuth();
+  const route = useRoute();
+
+  const { email } = route.params as { email: string }; // 👈 get email from route
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -27,8 +39,49 @@ const Verify = () => {
 
   const handleCodeComplete = (code: string) => {
     console.log("Code entered:", code);
-    // We will Handle verification logic here
+    setOtpCode(code); // store to state
   };
+
+  const { mutate: mutateVerify, isPending: isVerifying } = useMutation({
+    mutationFn: (data: { otp: string; email: string }) => verifyEmailOTP(data),
+
+    onSuccess: () => {
+      Toast.show({
+        type: "success",
+        text1: "Verified",
+        text2: "Welcome aboard!",
+      });
+      login(); // ✅ Triggers MainApp
+    },
+
+    onError: () => {
+      Toast.show({
+        type: "error",
+        text1: "Verification Failed",
+        text2: "Invalid code or server error",
+      });
+    },
+  });
+  const { mutate: mutateResend, isPending: isResending } = useMutation({
+    mutationFn: () => resendOtp({ data: { email } }),
+
+    onSuccess: () => {
+      Toast.show({
+        type: "success",
+        text1: "OTP Resent",
+        text2: "Please check your email again",
+      });
+      setTimeLeft(59);
+    },
+
+    onError: () => {
+      Toast.show({
+        type: "error",
+        text1: "Failed to resend",
+        text2: "Please try again later",
+      });
+    },
+  });
 
   return (
     <GradientBackground>
@@ -48,29 +101,28 @@ const Verify = () => {
             </View>
 
             <CodeInput
-              length={5}
+              length={6}
               onCodeComplete={handleCodeComplete}
               allowBackspace={true}
             />
 
             {/* <Button title="Proceed" onPress={() => {RideDetails}} /> */}
             <Button
-              title="Proceed"
-              onPress={() => {
-                login(); // 🔥 Triggers `MainApp` to show
-              }}
+              title={isVerifying ? "Verifying..." : "Proceed"}
+              onPress={() => mutateVerify({ email, otp: otpCode })}
+              disabled={otpCode.length !== 6 || isVerifying}
             />
 
-            <Text style={styles.timerText}>
-              Code will be resent in{" "}
-              <Text style={styles.timer}>
-                {String(Math.floor(timeLeft / 60)).padStart(2, "0")}:
-                {String(timeLeft % 60).padStart(2, "0")}
-              </Text>{" "}
-              sec
-            </Text>
+            {timeLeft === 0 && (
+              <TouchableOpacity onPress={() => mutateResend()}>
+                <Text style={styles.resendLink}>
+                  {isResending ? "Resending..." : "Resend Code"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
+        <Toast />
       </SafeAreaView>
     </GradientBackground>
   );
