@@ -12,11 +12,9 @@
       "backgroundColor": "#9C27B0"
     },
     "newArchEnabled": true,
-    
     "assetBundlePatterns": [
       "**/*"
     ],
-   
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.deliveryapp"
@@ -31,12 +29,15 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
       ],
-
-      
       "config": {
         "googleMaps": {
           "apiKey": "https://maps.googleapis.com/maps/api/js?key=AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao&libraries=places&callback=initMap"
         }
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9ed26786-0fb1-4a1f-9c69-b72c82cbd326"
       }
     }
   }
