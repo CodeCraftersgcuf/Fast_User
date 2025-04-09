@@ -19,8 +19,17 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import Icon from "react-native-vector-icons/Ionicons"
 import type { SendParcelStackParamList } from "../../types/navigation"
 import { useOrder } from "../../contexts/OrderContext"
+import { useRoute } from "@react-navigation/native"
 
 type ParcelDetailsNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "ParcelDetails">
+
+
+//Code realted to the integration
+import { CreateParcelStep3 } from "../../utils/mutations/accountMutations"
+import { useMutation } from "@tanstack/react-query"
+import Toast from "react-native-toast-message";
+import { getFromStorage } from "../../utils/storage";
+
 
 interface SelectionOption {
   label: string
@@ -46,6 +55,10 @@ const valueRanges: SelectionOption[] = [
 ]
 
 export default function ParcelDetails() {
+  const [token, setToken] = useState<string | null>(null); // State to hold the token
+  const route = useRoute();
+  const { parcelId } = route.params as { parcelId: number }; // 👈 Get parcelId from navigation
+
   const navigation = useNavigation<ParcelDetailsNavigationProp>()
   const { deliveryDetails, updateDeliveryDetails } = useOrder()
 
@@ -72,7 +85,41 @@ export default function ParcelDetails() {
       keyboardDidShowListener.remove()
       keyboardDidHideListener.remove()
     }
-  }, [])
+  }, []);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+  const { mutate: submitStep3, isPending: isSubmittingStep3 } = useMutation({
+    mutationFn: (data: any) => CreateParcelStep3({ id: parcelId, data, token: token! }),
+    onSuccess: (response) => {
+      console.log("✅ Step 3 response:", response);
+
+      Toast.show({
+        type: "success",
+        text1: "Step 3 Completed",
+        text2: "Proceeding to payment",
+      });
+
+      navigation.navigate("PaymentDetails", { parcelId });
+    },
+    onError: (error) => {
+      console.error("❌ Step 3 failed:", error);
+
+      Toast.show({
+        type: "error",
+        text1: "Submission failed",
+        text2: "Please check parcel details and try again",
+      });
+    },
+  });
+
 
   const handleProceed = () => {
     if (parcelName && parcelCategory && parcelValue) {
@@ -83,8 +130,19 @@ export default function ParcelDetails() {
         parcelValue,
         description,
       })
+      // Helper to get midpoint from range string
+      const getMidpointValue = (range: string) => {
+        if (range.includes("+")) return 1000000; // default for "N 1,000,000 and above"
+        const [min, max] = range.split("-").map(Number);
+        return Math.round((min + max) / 2);
+      };
 
-      navigation.navigate("PaymentDetails")
+      submitStep3({
+        parcel_name: parcelName,
+        parcel_category: parcelCategory,
+        parcel_value: getMidpointValue(parcelValue), // 👈 convert range to number
+        description,
+      });
     }
   }
 
@@ -290,7 +348,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
-    paddingTop: 30,
   },
   header: {
     flexDirection: "row",

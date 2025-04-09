@@ -10,7 +10,17 @@ const API_ENDPOINTS = {
     ForgotPassword: API_DOMAIN + "/auth/user/forget-password",
     VerifyPasswordOtp: API_DOMAIN + "/auth/user/verify-forget-password-otp",
     ResetPassword: API_DOMAIN + "/auth/user/reset-password",
-},
+  },
+  PARCEL: {
+    ParcelList: API_DOMAIN + "/sendparcel/list",
+    CreateParcelStep1: API_DOMAIN + "/sendparcel/create-step-one",
+
+    // These require a dynamic ID
+    CreateParcelStep2: (id) => `${API_DOMAIN}/sendparcel/${id}/step-two`,
+    CreateParcelStep3: (id) => `${API_DOMAIN}/sendparcel/${id}/step-three`,
+    CreateParcelStep4: (id) => `${API_DOMAIN}/sendparcel/${id}/step-four`,
+  },
+
   USER: {
     SetPin: API_DOMAIN + "/user/set-pin",
     VerifyPin: API_DOMAIN + "/user/verify-pin",

@@ -51,7 +51,7 @@ const Verify = () => {
         text1: "Verified",
         text2: "Welcome aboard!",
       });
-      login(); // ✅ Triggers MainApp
+      navigation.navigate('Login');
     },
 
     onError: () => {

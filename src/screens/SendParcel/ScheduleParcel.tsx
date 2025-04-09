@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,12 +18,24 @@ import { DateTimePicker } from "../../components/DateTimePicker";
 import { useOrder } from "../../contexts/OrderContext";
 import type { SendParcelStackParamList } from "../../types/navigation";
 
+
+//Code related to the integration
+import { CreateParcelStep1 } from "../../utils/mutations/accountMutations";
+import { useMutation } from "@tanstack/react-query";
+import { getFromStorage } from "../../utils/storage";
+import Toast from "react-native-toast-message";
+import moment from "moment"; // make sure moment is installed
+
+
+
 type ScheduleParcelNavigationProp = NativeStackNavigationProp<
   SendParcelStackParamList,
   "ScheduleParcel"
 >;
 
 export default function ScheduleParcel() {
+  const [token, setToken] = useState<string | null>(null); // State to hold the token
+
   const navigation = useNavigation<ScheduleParcelNavigationProp>();
   const { deliveryDetails, updateDeliveryDetails } = useOrder();
   const [selectedDateTime, setSelectedDateTime] = useState<string>(
@@ -31,17 +43,102 @@ export default function ScheduleParcel() {
   );
   const [isDateTimePickerVisible, setIsDateTimePickerVisible] = useState(false);
 
+  // Fetch the token and user data when the component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  console.log("DeliveryDetail: ", deliveryDetails);
+
+  const { mutate: createStepOneParcel, isPending: isCreating } = useMutation({
+    mutationFn: async (payload: any) => {
+      if (!token) throw new Error("Token not found");
+      return await CreateParcelStep1({ data: payload, token });
+    },
+    onSuccess: (response) => {
+      console.log("✅ Raw Response:", response);
+
+      try {
+        const parsed =
+          typeof response === "string" ? JSON.parse(response.split("\n").pop() || "") : response;
+
+        console.log("✅ Parsed JSON:", parsed);
+
+        const parcelId = parsed?.data?.id;
+
+        console.log("Parcel Step 1 created:", parcelId);
+
+        Toast.show({
+          type: "success",
+          text1: "Step 1 Completed",
+          text2: "Proceeding to sender/receiver details",
+        });
+
+        if (parcelId) {
+          navigation.navigate("SenderReceiverDetails", { parcelId });
+        }
+      } catch (e) {
+        console.error("❌ Failed to parse response:", e);
+      }
+    },
+
+    onError: (error: any) => {
+      console.error("❌ Parcel Step 1 failed:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to create parcel",
+        text2: "Please check the form and try again.",
+      });
+    },
+  });
+
+
   const handleDateTimeSelect = (dateTime: string) => {
     setSelectedDateTime(dateTime);
     updateDeliveryDetails({ scheduleDateTime: dateTime });
+    console.log("The Date:", selectedDateTime);
     setIsDateTimePickerVisible(false);
   };
 
   const handleProceed = () => {
-    if (selectedDateTime) {
-      navigation.navigate("SenderReceiverDetails");
+    if (!selectedDateTime || !token) return;
+
+    // Parse the custom format like: "Thu, Apr 10 - 11:30 AM"
+    const parsed = moment(selectedDateTime, "ddd, MMM DD - hh:mm A");
+
+    if (!parsed.isValid()) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid date",
+        text2: "Unable to parse selected date",
+      });
+      return;
     }
+
+    const latestDetails = { ...deliveryDetails };
+
+    console.log("🟡 Live DeliveryDetails:", latestDetails);
+
+    const payload = {
+      sender_address: latestDetails.senderAddress,
+      receiver_address: latestDetails.receiverAddress,
+      is_scheduled: true,
+      scheduled_date: parsed.format("YYYY-MM-DD"),
+      scheduled_time: parsed.format("HH:mm"),
+    };
+
+    console.log("The PayLoad", payload);
+    createStepOneParcel(payload);
+
   };
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -169,13 +266,16 @@ export default function ScheduleParcel() {
       <TouchableOpacity
         style={[
           styles.proceedButton,
-          !selectedDateTime && styles.proceedButtonDisabled,
+          (!selectedDateTime || isCreating) && styles.proceedButtonDisabled, // Disable if no date or loading
         ]}
         onPress={handleProceed}
-        disabled={!selectedDateTime}
+        disabled={!selectedDateTime || isCreating} // Disable button during mutation
       >
-        <Text style={styles.proceedButtonText}>Proceed</Text>
+        <Text style={styles.proceedButtonText}>
+          {isCreating ? "Creating Parcel..." : "Proceed"}
+        </Text>
       </TouchableOpacity>
+
 
       <DateTimePicker
         isVisible={isDateTimePickerVisible}
@@ -190,7 +290,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
-    paddingTop: 30,
+    paddingTop: 16,
   },
   header: {
     flexDirection: "row",
@@ -360,7 +460,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderStyle: "dashed",
     borderColor: "#AAAAAA",
-    marginRight: "90%", 
+    marginRight: "90%",
   },
   proceedButton: {
     backgroundColor: "#800080",

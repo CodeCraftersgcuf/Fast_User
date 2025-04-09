@@ -21,7 +21,11 @@ interface DeliveryDetails {
   payOnDelivery: boolean
   amount: number
   delivery: number
-  scheduleDateTime: string
+
+  // 👇 New fields for backend support
+  scheduleDateTime: string       // still used for display
+  scheduled_date: string         // used for API call (YYYY-MM-DD)
+  scheduled_time: string         // used for API call (HH:mm)
 }
 
 interface OrderContextType {
@@ -45,8 +49,10 @@ const defaultDeliveryDetails: DeliveryDetails = {
   payOnDelivery: false,
   amount: 0,
   delivery: 0,
-  scheduleDateTime: "",
-}
+  scheduleDateTime: "",      // for UI display
+  scheduled_date: "",        // for API
+  scheduled_time: "",        // for API
+};
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined)
 

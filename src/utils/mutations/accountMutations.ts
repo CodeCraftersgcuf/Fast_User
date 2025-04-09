@@ -3,6 +3,94 @@ import { API_ENDPOINTS } from "../../../apiConfig";
 // import { ICooperateClient } from '@/app/createcoroporateaccount';
 import { apiCall } from "../customApiCall";
 
+export const CreateParcelStep1 = async ({
+  data,
+  token,
+}: {
+  data: {
+    sender_address: string;
+    receiver_address: string;
+    is_scheduled: boolean;
+    scheduled_date: string;
+    scheduled_time: string;
+  }; // Frontend field names
+  token: string;
+}) => {
+  console.log("Sending request with this: ", data);
+  // Make the API call with the mapped data
+  return await apiCall(
+    API_ENDPOINTS.PARCEL.CreateParcelStep1,
+    "POST",
+    data,
+    token
+  );
+};
+
+export const CreateParcelStep2 = async ({
+  id,
+  data,
+  token,
+}: {
+  id: number | string;
+  data: {
+    sender_name: string;
+    sender_phone: string;
+    receiver_name: string;
+    receiver_phone: string;
+  };
+  token: string;
+}) => {
+  return await apiCall(
+    `${API_ENDPOINTS.PARCEL.CreateParcelStep2(id)}`,
+    "POST",
+    data,
+    token
+  );
+};
+export const CreateParcelStep3 = async ({
+  id,
+  data,
+  token,
+}: {
+  id: number | string;
+  data: {
+    parcel_name: string;
+    parcel_category: string;
+    parcel_value: number;
+    description?: string;
+  };
+  token: string;
+}) => {
+  return await apiCall(
+    `${API_ENDPOINTS.PARCEL.CreateParcelStep3(id)}`,
+    "POST",
+    data,
+    token
+  );
+};
+export const CreateParcelStep4 = async ({
+  id,
+  data,
+  token,
+}: {
+  id: number | string;
+  data: {
+    payer: "sender" | "receiver" | "third-party";
+    payment_method: "wallet" | "bank";
+    pay_on_delivery: boolean;
+    amount: number;
+    delivery_fee: number;
+  };
+  token: string;
+}) => {
+  return await apiCall(
+    `${API_ENDPOINTS.PARCEL.CreateParcelStep4(id)}`,
+    "POST",
+    data,
+    token
+  );
+};
+
 export const changePassword = async ({
   data,
   token,

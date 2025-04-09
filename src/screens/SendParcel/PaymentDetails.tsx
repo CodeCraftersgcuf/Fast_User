@@ -3,7 +3,7 @@
 
 import React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, ScrollView, Modal } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
@@ -13,8 +13,15 @@ import { DeliveryFeeModal } from "../../components/Delivery/DeliveryFeeModal"
 import { FeeModal } from "../../components/Delivery/FeeModal"
 import { ReceiverModal } from "../../components/Delivery/ReceiverModal"
 import { useOrder } from "../../contexts/OrderContext"
+import { useRoute } from "@react-navigation/native"
 
 type PaymentDetailsNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "PaymentDetails">
+
+//Code realted to the integration
+import { CreateParcelStep4 } from "../../utils/mutations/accountMutations"
+import { useMutation } from "@tanstack/react-query"
+import Toast from "react-native-toast-message";
+import { getFromStorage } from "../../utils/storage";
 
 interface SelectionOption {
   label: string
@@ -23,6 +30,9 @@ interface SelectionOption {
 }
 
 export default function PaymentDetails() {
+    const [token, setToken] = useState<string | null>(null); // State to hold the token
+    const route = useRoute();
+    const { parcelId } = route.params as { parcelId: number }; // 👈 Get parcelId from navigation
   const navigation = useNavigation<PaymentDetailsNavigationProp>()
   const { deliveryDetails, updateDeliveryDetails } = useOrder()
 
@@ -39,30 +49,80 @@ export default function PaymentDetails() {
   const [isFeeModalVisible, setIsFeeModalVisible] = useState(false)
   const [isReceiverModalVisible, setIsReceiverModalVisible] = useState(false)
 
+  
+    useEffect(() => {
+      const fetchUserData = async () => {
+        const fetchedToken = await getFromStorage("authToken");
+        setToken(fetchedToken);
+        console.log("🔹 Retrieved Token:", fetchedToken);
+      };
+  
+      fetchUserData();
+    }, []);
+
+    const { mutate: submitStep4, isPending: isSubmittingStep4 } = useMutation({
+      mutationFn: (data: any) =>
+        CreateParcelStep4({
+          id: parcelId,
+          data,
+          token: token!,
+        }),
+      onSuccess: (response) => {
+        console.log("✅ Step 4 Response:", response);
+        Toast.show({
+          type: "success",
+          text1: "Payment Info Submitted",
+        });
+    
+        // 👉 Open modals based on payer/payment method logic
+        if (payer === "sender") {
+          if (paymentMethod === "wallet") {
+            setIsDeliveryFeeModalVisible(true);
+          } else if (paymentMethod === "bank_transfer") {
+            setIsFeeModalVisible(true);
+          }
+        } else if (payer === "receiver") {
+          setIsReceiverModalVisible(true);
+        }
+      },
+      onError: (error) => {
+        console.error("❌ Step 4 Failed:", error);
+        Toast.show({
+          type: "error",
+          text1: "Submission Failed",
+          text2: "Please check your payment info and try again.",
+        });
+      },
+    });
+    
+    
+
   // Update the handleProceed function to navigate to different paths based on payment method
   const handleProceed = () => {
-    // Save the payment details to context
+    const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
+  
+    // Save to context
     updateDeliveryDetails({
       payer,
       paymentMethod,
       payOnDelivery: isPayOnDelivery,
-      amount: Number.parseFloat(amount.replace(/,/g, "")),
-      delivery: Number.parseFloat(amount.replace(/,/g, "")),
-    })
-
+      amount: parsedAmount,
+      delivery: parsedAmount,
+    });
+  
+    // Just show appropriate modal – mutation will happen after confirm
     if (payer === "sender") {
       if (paymentMethod === "wallet") {
-        // Show delivery fee modal for sender paying with wallet
-        setIsDeliveryFeeModalVisible(true)
+        setIsDeliveryFeeModalVisible(true);
       } else if (paymentMethod === "bank_transfer") {
-        // Show fee modal for sender paying with bank transfer
-        setIsFeeModalVisible(true)
+        setIsFeeModalVisible(true);
       }
     } else if (payer === "receiver") {
-      // Show receiver modal when receiver is paying
-      setIsReceiverModalVisible(true)
+      setIsReceiverModalVisible(true);
     }
-  }
+  };
+  
+  
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (method: string) => {
@@ -72,21 +132,63 @@ export default function PaymentDetails() {
 
   // Update the handleDeliveryFeeConfirm function to navigate to SearchRiders
   const handleDeliveryFeeConfirm = () => {
-    setIsDeliveryFeeModalVisible(false)
-    navigation.navigate("SearchRiders", { amount })
-  }
+    const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
+    const payload = {
+      payer: payer as "sender" | "receiver" | "third-party",
+      payment_method: paymentMethod === "bank_transfer" ? "bank" : "wallet",
+      pay_on_delivery: isPayOnDelivery,
+      amount: parsedAmount,
+      delivery_fee: parsedAmount,
+    };
+  
+    submitStep4(payload, {
+      onSuccess: () => {
+        setIsDeliveryFeeModalVisible(false);
+        navigation.navigate("SearchRiders", { amount });
+      },
+    });
+  };
+  
 
   // Update the handleFeeConfirm function to navigate to SearchRider (not SearchRiders)
   const handleFeeConfirm = () => {
-    setIsFeeModalVisible(false)
-    navigation.navigate("SearchRider", { amount })
-  }
+    const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
+    const payload = {
+      payer: payer as "sender" | "receiver" | "third-party",
+      payment_method: paymentMethod === "bank_transfer" ? "bank" : "wallet",
+      pay_on_delivery: isPayOnDelivery,
+      amount: parsedAmount,
+      delivery_fee: parsedAmount,
+    };
+  
+    submitStep4(payload, {
+      onSuccess: () => {
+        setIsFeeModalVisible(false);
+        navigation.navigate("SearchRider", { amount });
+      },
+    });
+  };
+  
 
   // Update the handleReceiverConfirm function to navigate to SearchRider
   const handleReceiverConfirm = () => {
-    setIsReceiverModalVisible(false)
-    navigation.navigate("SearchRider", { amount })
-  }
+    const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
+    const payload = {
+      payer: payer as "sender" | "receiver" | "third-party",
+      payment_method: paymentMethod === "bank_transfer" ? "bank" : "wallet",
+      pay_on_delivery: isPayOnDelivery,
+      amount: parsedAmount,
+      delivery_fee: parsedAmount,
+    };
+  
+    submitStep4(payload, {
+      onSuccess: () => {
+        setIsReceiverModalVisible(false);
+        navigation.navigate("SearchRider", { amount });
+      },
+    });
+  };
+  
 
   // Handle amount change
   const handleAmountChange = (value: string) => {
@@ -386,7 +488,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
-    paddingTop: 30,
   },
   scrollView: {
     flex: 1,

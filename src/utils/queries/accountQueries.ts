@@ -1,6 +1,16 @@
 import axios from "axios";
 import { apiCall } from "../customApiCall";
-import { API_ENDPOINTS } from "@/apiConfig";
+import { API_ENDPOINTS } from "../../../apiConfig";
+
+
+export const getParcelList = async (token: string): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.PARCEL.ParcelList,
+    "GET",
+    undefined,
+    token
+  );
+};
 
 export const getUserProfile = async (
   token: string
@@ -43,13 +53,12 @@ export const getSingleTicket = async (
   ticketId: number
 ): Promise<ITicketsResponse> => {
   return await apiCall(
-    `${API_ENDPOINTS.USER.GetSingleTicket}/${ticketId}`,  // Append ticketId dynamically
+    `${API_ENDPOINTS.USER.GetSingleTicket}/${ticketId}`, // Append ticketId dynamically
     "GET",
     undefined,
     token
   );
 };
-
 
 export const markAllRead = async (token: string) => {
   return await apiCall(
@@ -235,7 +244,6 @@ interface ITicketsResponse {
   data: ITicket;
   message: string;
 }
-
 
 export interface IUserProfileData {
   firstName: string;
