@@ -12,6 +12,15 @@ export const getParcelList = async (token: string): Promise<any> => {
   );
 };
 
+export const getAddressList = async (token: string): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.ListAddress,
+    "GET",
+    undefined,
+    token
+  );
+};
+
 export const getUserProfile = async (
   token: string
 ): Promise<IUserProfileResponse> => {

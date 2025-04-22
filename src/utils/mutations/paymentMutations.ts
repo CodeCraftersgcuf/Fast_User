@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_ENDPOINTS } from "../../apiConfig";
+import { API_ENDPOINTS } from "../../../apiConfig";
 import { apiCall } from "../customApiCall";
 
 export const createWithdrawal = async ({

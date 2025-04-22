@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Modal, ActivityIndicator, Image } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
@@ -11,12 +11,27 @@ type EditProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamL
 
 type PasswordChangeStep = "email" | "otp" | "newPassword" | "none"
 
+//Code Related to the integration;
+import { useMutation } from "@tanstack/react-query"
+import { editProfile } from "../../utils/mutations/accountMutations"
+import Toast from "react-native-toast-message";
+import { getFromStorage } from "../../utils/storage";
+
+
+import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system'; // For MIME type if needed
+
+
 export default function EditProfileScreen() {
+  const [token, setToken] = useState<string | null>(null); // State to hold the token
+  const [profileImage, setProfileImage] = useState<any>(null);
+
   const navigation = useNavigation<EditProfileScreenNavigationProp>()
   const [name, setName] = useState("Qamardeen Malik")
   const [phoneNumber, setPhoneNumber] = useState("07033484845")
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Password change modal states
   const [passwordChangeStep, setPasswordChangeStep] = useState<PasswordChangeStep>("none")
   const [email, setEmail] = useState("")
@@ -24,14 +39,127 @@ export default function EditProfileScreen() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+  const { mutate: editProfileMutate } = useMutation({
+    mutationFn: async () => {
+      if (!token) return;
+
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("phone", phoneNumber);
+
+      if (profileImage) {
+        formData.append("profile_picture", {
+          uri: profileImage.uri,
+          name: profileImage.name,
+          type: profileImage.type,
+        } as any); // ✅ FormData entry for image
+      }
+
+      const response = await editProfile({
+        data: formData,
+        token,
+      });
+
+      return response;
+    },
+    onSuccess: (data) => {
+      console.log("🔹 Edit Profile Response:", data);
+      Toast.show({
+        type: "success",
+        text1: "Profile updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("🔹 Edit Profile Error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to update profile",
+      });
+    },
+  });
+
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      const selected = result.assets[0];
+
+      const localUri = selected.uri;
+      const filename = localUri.split("/").pop() || "profile.jpg";
+
+      // Try to infer the type
+      const match = /\.(\w+)$/.exec(filename || "");
+      const type = match ? `image/${match[1]}` : "image";
+
+      setProfileImage({
+        uri: localUri,
+        name: filename,
+        type: type,
+      });
+    }
+  };
   const handleSave = () => {
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      navigation.goBack()
-    }, 1500)
-  }
+    if (!token) return;
+
+    if (!name.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Missing Name",
+        text2: "Please enter your full name.",
+      });
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Missing Phone Number",
+        text2: "Please enter your phone number.",
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("phone", phoneNumber);
+
+    if (profileImage?.uri) {
+      const file = {
+        uri: profileImage.uri,
+        name: profileImage.fileName || "profile.jpg", // Fallback name
+        type: profileImage.type || "image/jpeg",      // Ensure valid type
+      };
+
+      formData.append("profile_picture", file as any);
+    }
+
+    setIsLoading(true);
+    editProfileMutate(
+      { data: formData, token },
+      {
+        onSettled: () => {
+          setIsLoading(false);
+        },
+      }
+    );
+  };
+
 
   const handleChangePassword = () => {
     setPasswordChangeStep("email")
@@ -72,15 +200,20 @@ export default function EditProfileScreen() {
 
       <View style={styles.content}>
         {/* Profile Image */}
-        <View style={styles.profileImageContainer}>
+        <TouchableOpacity onPress={pickImage} style={styles.profileImageContainer}>
           {isLoading ? (
             <ActivityIndicator size="large" color="#800080" />
           ) : (
             <View style={styles.gradientBorder}>
-              {/* This is a placeholder for the gradient border */}
+              {profileImage?.uri ? (
+                <Image source={{ uri: profileImage.uri }} style={styles.profileImage} />
+              ) : (
+                <Icon name="camera-outline" size={28} color="#aaa" />
+              )}
             </View>
           )}
-        </View>
+        </TouchableOpacity>
+
 
         {/* Form Fields */}
         <View style={styles.formGroup}>
@@ -102,16 +235,16 @@ export default function EditProfileScreen() {
           />
         </View>
 
-        <TouchableOpacity 
-          style={styles.changePasswordButton} 
+        <TouchableOpacity
+          style={styles.changePasswordButton}
           onPress={handleChangePassword}
         >
           <Text style={styles.changePasswordText}>Change Password</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity 
-        style={styles.saveButton} 
+      <TouchableOpacity
+        style={styles.saveButton}
         onPress={handleSave}
         disabled={isLoading}
       >
@@ -134,9 +267,9 @@ export default function EditProfileScreen() {
             <TouchableOpacity style={styles.closeButton} onPress={closePasswordModal}>
               <Icon name="close" size={24} color="#000000" />
             </TouchableOpacity>
-            
+
             <Text style={styles.modalTitle}>Change Password</Text>
-            
+
             {passwordChangeStep === "email" && (
               <>
                 <Text style={styles.modalLabel}>Email Address</Text>
@@ -147,8 +280,8 @@ export default function EditProfileScreen() {
                   onChangeText={setEmail}
                   keyboardType="email-address"
                 />
-                <TouchableOpacity 
-                  style={styles.modalButton} 
+                <TouchableOpacity
+                  style={styles.modalButton}
                   onPress={handleEmailSubmit}
                 >
                   <Text style={styles.modalButtonText}>Proceed</Text>
@@ -166,8 +299,8 @@ export default function EditProfileScreen() {
                   onChangeText={setOtp}
                   keyboardType="number-pad"
                 />
-                <TouchableOpacity 
-                  style={styles.modalButton} 
+                <TouchableOpacity
+                  style={styles.modalButton}
                   onPress={handleOtpSubmit}
                 >
                   <Text style={styles.modalButtonText}>Proceed</Text>
@@ -193,8 +326,8 @@ export default function EditProfileScreen() {
                   onChangeText={setConfirmPassword}
                   secureTextEntry
                 />
-                <TouchableOpacity 
-                  style={styles.modalButton} 
+                <TouchableOpacity
+                  style={styles.modalButton}
                   onPress={handlePasswordSubmit}
                 >
                   <Text style={styles.modalButtonText}>Save</Text>
@@ -204,6 +337,7 @@ export default function EditProfileScreen() {
           </View>
         </View>
       </Modal>
+      <Toast />
     </SafeAreaView>
   )
 }

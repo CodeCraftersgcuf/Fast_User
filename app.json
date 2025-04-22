@@ -24,10 +24,12 @@
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#9C27B0"
       },
+
       "package": "com.yourcompany.deliveryapp",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"
       ],
       "config": {
         "googleMaps": {

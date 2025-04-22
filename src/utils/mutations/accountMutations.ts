@@ -3,6 +3,75 @@ import { API_ENDPOINTS } from "../../../apiConfig";
 // import { ICooperateClient } from '@/app/createcoroporateaccount';
 import { apiCall } from "../customApiCall";
 
+export const createAddress = async ({
+  data,
+  token,
+}: {
+  data: {
+    address: string;
+    city: string;
+    state: string;
+    user_id: string;
+    type: string;
+  }; // Frontend field names
+  token: string;
+  id: string;
+}) => {
+  console.log("Sending request with this: ", data);
+  // Make the API call with the mapped data
+  return await apiCall(API_ENDPOINTS.USER.CreateAddress, "POST", data, token);
+};
+
+export const updateAddress = async ({
+  data,
+  token,
+  id,
+}: {
+  data: {
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    zip_code: string;
+  }; // Frontend field names
+  token: string;
+  id: string;
+}) => {
+  console.log("Sending request with this: ", data);
+  // Make the API call with the mapped data
+  return await apiCall(
+    `${API_ENDPOINTS.USER.UpdateAddress}/${id}`,
+    "PUT",
+    data,
+    token
+  );
+};
+export const deleteAddress = async ({
+  data,
+  token,
+}: {
+  data: { id: string };
+  token: string;
+}) => {
+  return await apiCall(
+    `${API_ENDPOINTS.USER.DeleteAddress}/${data.id}`,
+    "DELETE",
+    data,
+    token
+  );
+};
+
+export const editProfile = async ({
+  data,
+  token,
+}: {
+  data: any; // Allow FormData here
+  token: string;
+}) => {
+  console.log("Sending request with this: ", data);
+  return await apiCall(API_ENDPOINTS.USER.EditProfile, "POST", data, token);
+};
+
 export const CreateParcelStep1 = async ({
   data,
   token,
@@ -235,18 +304,18 @@ export const createReplyTicket = async ({
   );
 };
 
-export const editProfile = async ({
-  data,
-  token,
-}: {
-  data: {
-    name: string;
-    phone: string;
-  };
-  token: string;
-}) => {
-  return await apiCall(API_ENDPOINTS.USER.EditProfile, "POST", data, token);
-};
+// export const editProfile = async ({
+//   data,
+//   token,
+// }: {
+//   data: {
+//     name: string;
+//     phone: string;
+//   };
+//   token: string;
+// }) => {
+//   return await apiCall(API_ENDPOINTS.USER.EditProfile, "POST", data, token);
+// };
 
 export const createIndividualAccount = async ({
   data,

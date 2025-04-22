@@ -22,6 +22,13 @@ const API_ENDPOINTS = {
   },
 
   USER: {
+    CreateAddress: API_DOMAIN + '/address/create',
+    ListAddress: API_DOMAIN + '/address/list',
+    UpdateAddress: API_DOMAIN + '/address/update',
+    DeleteAddress: API_DOMAIN + '/address/delete',
+
+    EditProfile: API_DOMAIN + "/user/update-profile",
+
     SetPin: API_DOMAIN + "/user/set-pin",
     VerifyPin: API_DOMAIN + "/user/verify-pin",
     GetUserDetails: API_DOMAIN + "/user/details",
