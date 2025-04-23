@@ -2,7 +2,6 @@ import axios from "axios";
 import { apiCall } from "../customApiCall";
 import { API_ENDPOINTS } from "../../../apiConfig";
 
-
 export const getParcelList = async (token: string): Promise<any> => {
   return await apiCall(
     API_ENDPOINTS.PARCEL.ParcelList,
@@ -13,12 +12,7 @@ export const getParcelList = async (token: string): Promise<any> => {
 };
 
 export const getAddressList = async (token: string): Promise<any> => {
-  return await apiCall(
-    API_ENDPOINTS.USER.ListAddress,
-    "GET",
-    undefined,
-    token
-  );
+  return await apiCall(API_ENDPOINTS.USER.ListAddress, "GET", undefined, token);
 };
 
 export const getUserProfile = async (
@@ -30,6 +24,9 @@ export const getUserProfile = async (
     undefined,
     token
   );
+};
+export const getFaqs = async (token: string): Promise<any> => {
+  return await apiCall(API_ENDPOINTS.USER.GetFaqs, "GET", undefined, token);
 };
 
 export const getKycStatus = async (

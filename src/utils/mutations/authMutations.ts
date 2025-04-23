@@ -76,6 +76,7 @@ export const verifyPin = async (data: { email: string; pin: string }) => {
 export const forgotPassword = async (data: { email: string }) => {
   return await apiCall(API_ENDPOINTS.AUTH.ForgotPassword, "POST", data);
 };
+
 export const verifyPasswordOTP = async (data: {
   otp: string;
   email: string;
@@ -87,6 +88,7 @@ export const verifyPasswordOTP = async (data: {
 export const resetPassword = async (data: {
   email: string;
   password: string;
+  password_confirmation: string;
 }) => {
   return await apiCall(API_ENDPOINTS.AUTH.ResetPassword, "POST", data);
 };

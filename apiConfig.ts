@@ -29,6 +29,8 @@ const API_ENDPOINTS = {
 
     EditProfile: API_DOMAIN + "/user/update-profile",
 
+    GetFaqs: API_DOMAIN + '/faqs/user',
+
     SetPin: API_DOMAIN + "/user/set-pin",
     VerifyPin: API_DOMAIN + "/user/verify-pin",
     GetUserDetails: API_DOMAIN + "/user/details",

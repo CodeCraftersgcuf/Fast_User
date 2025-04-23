@@ -16,7 +16,7 @@ import { useMutation } from "@tanstack/react-query"
 import { editProfile } from "../../utils/mutations/accountMutations"
 import Toast from "react-native-toast-message";
 import { getFromStorage } from "../../utils/storage";
-
+import { forgotPassword, verifyPasswordOTP, resetPassword } from "../../utils/mutations/authMutations"
 
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
@@ -38,7 +38,8 @@ export default function EditProfileScreen() {
   const [otp, setOtp] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-
+ 
+  
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -84,6 +85,65 @@ export default function EditProfileScreen() {
       Toast.show({
         type: "error",
         text1: "Failed to update profile",
+      });
+    },
+  });
+
+  // Forgot Password
+  const { mutate: forgotPasswordMutate, isPending: isSendingEmail } = useMutation({
+    mutationFn: forgotPassword,
+    onSuccess: (data) => {
+      console.log("The Data of the email coming", data);
+      Toast.show({
+        type: "success",
+        text1: "Email sent!",
+        text2: "Check your inbox for the OTP.",
+      });
+      setPasswordChangeStep("otp"); // Proceed to next step
+    },
+    onError: (error: any) => {
+      console.error("🔹 Forgot Password Error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to send email",
+      });
+    },
+  });
+
+  // Verify OTP
+  const { mutate: verifyOtpMutate, isPending: isVerifyingOtp } = useMutation({
+    mutationFn: verifyPasswordOTP,
+    onSuccess: () => {
+      Toast.show({
+        type: "success",
+        text1: "OTP Verified!",
+      });
+      setPasswordChangeStep("newPassword");
+    },
+    onError: (error: any) => {
+      console.error("🔹 OTP Verification Error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Invalid OTP",
+      });
+    },
+  });
+
+  // Reset Password
+  const { mutate: resetPasswordMutate, isPending: isResetting } = useMutation({
+    mutationFn: resetPassword,
+    onSuccess: () => {
+      Toast.show({
+        type: "success",
+        text1: "Password reset successful",
+      });
+      closePasswordModal(); // Reset all states
+    },
+    onError: (error: any) => {
+      console.error("🔹 Reset Password Error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to reset password",
       });
     },
   });
@@ -166,19 +226,42 @@ export default function EditProfileScreen() {
   }
 
   const handleEmailSubmit = () => {
-    // Simulate sending OTP
-    setPasswordChangeStep("otp")
-  }
+    if (!email.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Missing Email",
+      });
+      return;
+    }
+
+    forgotPasswordMutate({ email });
+  };
 
   const handleOtpSubmit = () => {
-    // Simulate OTP verification
-    setPasswordChangeStep("newPassword")
-  }
+    if (!otp.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Enter OTP",
+      });
+      return;
+    }
 
-  const handlePasswordSubmit = () => {
-    // Simulate password change
-    setPasswordChangeStep("none")
-  }
+    verifyOtpMutate({ email, otp });
+  }; const handlePasswordSubmit = () => {
+    if (!newPassword || newPassword !== confirmPassword) {
+      Toast.show({
+        type: "error",
+        text1: "Passwords don't match",
+      });
+      return;
+    }
+
+    resetPasswordMutate({
+      email,
+      password: newPassword,
+      password_confirmation: confirmPassword,
+    });
+  };
 
   const closePasswordModal = () => {
     setPasswordChangeStep("none")
@@ -283,8 +366,11 @@ export default function EditProfileScreen() {
                 <TouchableOpacity
                   style={styles.modalButton}
                   onPress={handleEmailSubmit}
+                  disabled={isSendingEmail}
                 >
-                  <Text style={styles.modalButtonText}>Proceed</Text>
+                  <Text style={styles.modalButtonText}>
+                    {isSendingEmail ? "Sending..." : "Proceed"}
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
@@ -302,8 +388,11 @@ export default function EditProfileScreen() {
                 <TouchableOpacity
                   style={styles.modalButton}
                   onPress={handleOtpSubmit}
+                  disabled={isVerifyingOtp}
                 >
-                  <Text style={styles.modalButtonText}>Proceed</Text>
+                  <Text style={styles.modalButtonText}>
+                    {isVerifyingOtp ? "Verifying..." : "Proceed"}
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
@@ -329,14 +418,18 @@ export default function EditProfileScreen() {
                 <TouchableOpacity
                   style={styles.modalButton}
                   onPress={handlePasswordSubmit}
+                  disabled={isResetting}
                 >
-                  <Text style={styles.modalButtonText}>Save</Text>
+                  <Text style={styles.modalButtonText}>
+                    {isResetting ? "Saving..." : "Save"}
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
           </View>
         </View>
       </Modal>
+
       <Toast />
     </SafeAreaView>
   )
@@ -463,8 +556,9 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
+    justifyContent: "flex-end",
     alignItems: "center",
+    marginBottom: 10,
   },
   modalContainer: {
     width: "90%",

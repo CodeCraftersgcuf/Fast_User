@@ -5,12 +5,17 @@ import { colors } from '../constants/colors';
 interface ButtonProps {
   onPress: () => void;
   title: string;
+  disabled: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ onPress, title }) => {
+export const Button: React.FC<ButtonProps> = ({ onPress, title, disabled }) => {
   return (
-    <TouchableOpacity style={styles.button} onPress={onPress}>
-      <Text style={styles.buttonText}>{title}</Text>
+    <TouchableOpacity
+      style={[styles.button, disabled && styles.disabledButton]} // Apply disabled style
+      onPress={disabled ? undefined : onPress} // Prevent onPress if disabled
+      disabled={disabled} // Ensure TouchableOpacity knows it's disabled
+    >
+      <Text style={[styles.buttonText, disabled && styles.disabledText]}>{title}</Text>
     </TouchableOpacity>
   );
 };
@@ -23,9 +28,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  disabledButton: {
+    backgroundColor: colors.grey, // Change to a gray color when disabled
+  },
   buttonText: {
     color: colors.secondary,
     fontSize: 16,
     fontWeight: '600',
+  },
+  disabledText: {
+    color: colors.lightgrey, // Lighten the text color when disabled
   },
 });

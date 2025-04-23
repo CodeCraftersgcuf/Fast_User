@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Modal, ScrollView, Image } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
@@ -9,50 +9,60 @@ import type { RootStackParamList } from "../../types/navigation"
 
 type FAQsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "FAQs">
 
+// Code Related to the integration
+import { useQuery } from "@tanstack/react-query"
+import { getFaqs } from "../../utils/queries/accountQueries"
+import { getFromStorage } from "../../utils/storage"
+import Loader from "../../components/Loader"
+
 interface FAQ {
-  id: string
-  question: string
+  id: number
+  title: string
   answer: string
 }
 
 export default function FAQsScreen() {
+  const [token, setToken] = useState<string | null>(null)
   const navigation = useNavigation<FAQsScreenNavigationProp>()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFAQ, setSelectedFAQ] = useState<FAQ | null>(null)
-  
-  const faqs: FAQ[] = [
-    {
-      id: "1",
-      question: "What is Fast Logistics",
-      answer: "A new and reliable logistics company that caters for your delivery needs"
-    },
-    {
-      id: "2",
-      question: "How to book rides",
-      answer: "You can book rides by selecting your pickup and drop-off locations, choosing a delivery type, and confirming your booking."
-    },
-    {
-      id: "3",
-      question: "How to book rides",
-      answer: "You can book rides by selecting your pickup and drop-off locations, choosing a delivery type, and confirming your booking."
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken")
+      setToken(fetchedToken)
+      console.log("🔹 Retrieved Token:", fetchedToken)
     }
-  ]
-  
-  const filteredFAQs = searchQuery.trim() === "" 
-    ? faqs 
-    : faqs.filter(faq => 
-        faq.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
+
+    fetchUserData()
+  }, [])
+
+  const { data: faqsData, isLoading } = useQuery({
+    queryKey: ["faqs"],
+    queryFn: () => getFaqs(token as string),
+    enabled: !!token,
+  })
+
+  console.log("The Faqs Data;", faqsData)
+
+  // ✅ Move this above filteredFAQs
+  const faqs: FAQ[] = Array.isArray(faqsData?.data) ? faqsData.data : []
+
+  const filteredFAQs = searchQuery.trim() === ""
+    ? faqs
+    : faqs.filter((faq) =>
+        faq.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
       )
-  
+
   const handleFAQPress = (faq: FAQ) => {
     setSelectedFAQ(faq)
   }
-  
+
   const closeModal = () => {
     setSelectedFAQ(null)
   }
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -62,7 +72,7 @@ export default function FAQsScreen() {
         <Text style={styles.headerTitle}>FAQs</Text>
         <View style={styles.headerRight} />
       </View>
-      
+
       <View style={styles.searchContainer}>
         <Icon name="search" size={20} color="#FFFFFF" style={styles.searchIcon} />
         <TextInput
@@ -73,22 +83,24 @@ export default function FAQsScreen() {
           onChangeText={setSearchQuery}
         />
       </View>
-      
-      <ScrollView style={styles.faqList}>
-        {filteredFAQs.map((faq) => (
-          <TouchableOpacity 
-            key={faq.id} 
-            style={styles.faqItem}
-            onPress={() => handleFAQPress(faq)}
-          >
-            <Text style={styles.faqQuestion}>{faq.question}</Text>
-            <Icon name="chevron-forward" size={20} color="#666666" />
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      
-     
-      
+
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <ScrollView style={styles.faqList}>
+          {filteredFAQs.map((faq) => (
+            <TouchableOpacity
+              key={faq.id.toString()}
+              style={styles.faqItem}
+              onPress={() => handleFAQPress(faq)}
+            >
+              <Text style={styles.faqQuestion}>{faq.title}</Text>
+              <Icon name="chevron-forward" size={20} color="#666666" />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
       {/* FAQ Detail Modal */}
       <Modal
         visible={selectedFAQ !== null}
@@ -99,12 +111,11 @@ export default function FAQsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedFAQ?.question}</Text>
+              <Text style={styles.modalTitle}>{selectedFAQ?.title}</Text>
               <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
                 <Icon name="close" size={20} color="#000000" />
               </TouchableOpacity>
             </View>
-            
             <Text style={styles.modalAnswer}>{selectedFAQ?.answer}</Text>
           </View>
         </View>
@@ -112,6 +123,7 @@ export default function FAQsScreen() {
     </SafeAreaView>
   )
 }
+
 
 const styles = StyleSheet.create({
   container: {
