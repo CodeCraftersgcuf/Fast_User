@@ -4,6 +4,7 @@ import { Navigation } from "./src/navigation"
 import { OrderProvider } from "./src/contexts/OrderContext"
 import { AuthProvider } from "./src/contexts/AuthContext"; // adjust path
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import 'react-native-get-random-values';
 
 // Create a new query client instance
 const queryClient = new QueryClient();
