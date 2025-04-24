@@ -2,15 +2,15 @@
 
 "use client"
 
-import { useState } from "react"
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  Image, 
-  Modal, 
+import { useState, useEffect } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+  Modal,
   ScrollView,
   StatusBar,
   Platform
@@ -24,17 +24,29 @@ import type { SettingsStackParamList } from "../../types/navigation"
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, "SettingsMain">
 
+//
+import { getFromStorage } from "../../utils/storage";
+
 export default function SettingsScreen() {
   const navigation = useNavigation<SettingsScreenNavigationProp>()
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [userData, setUserData] = useState<any>(null); // You can type this more strictly later
 
-  const userProfile = {
-    name: "Qamardeen Malik",
-    location: "Lagos, Ng",
-    phone: "07033484845",
-    email: "qamardeenmalik@gmail.com",
-    avatar: require("../../assets/images/pp.png"),
-  }
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      const fetchedUser = await getFromStorage("user");
+
+      setUserData(fetchedUser);
+
+      console.log("🔹 Retrieved Token:", fetchedToken);
+      console.log("👤 Retrieved User:", fetchedUser);
+    };
+
+    fetchUserData();
+  }, []);
+
+
 
   const handleEditProfile = () => {
     navigation.navigate("EditProfile")
@@ -76,39 +88,60 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.primary} barStyle="light-content" />
-      
+      {/* Profile Header */}
       {/* Profile Header */}
       <View style={styles.profileHeader}>
         <View style={styles.profileLeftSection}>
-          <Image source={userProfile.avatar} style={styles.profileAvatar} />
+          <Image
+            source={userData?.avatar ? { uri: userData.avatar } : require("../../assets/images/pp.png")}
+            style={styles.profileAvatar}
+          />
           <TouchableOpacity style={styles.editProfileButton} onPress={handleEditProfile}>
             <Text style={styles.editProfileText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
-        
-        <View style={styles.profileRightSection}>
-          <Text style={styles.profileName}>{userProfile.name}</Text>
-          <View style={styles.locationContainer}>
-            <Text style={styles.locationText}>{userProfile.location}</Text>
-            <View style={styles.triangleDown} />
-          </View>
-          
-          {/* Contact Info Card */}
-          <View style={styles.contactCard}>
-            <View style={styles.contactInfo}>
-              <Text style={styles.contactLabel}>Phone</Text>
-              <Text style={styles.contactValue}>{userProfile.phone}</Text>
-            </View>
 
-            
-            <View style={styles.contactInfo}>
-              <Text style={styles.contactLabel}>Email</Text>
-              <Text style={styles.contactValue}>{userProfile.email}</Text>
+        {userData && (
+          <>
+            <View style={styles.profileRightSection}>
+              <Text style={styles.profileName}>{userData.name}</Text>
+              <View style={styles.locationContainer}>
+                <Text style={styles.locationText}>Nigeria</Text>
+                <View style={styles.triangleDown} />
+              </View>
+
+              {/* Contact Info Card */}
+              <View style={styles.contactCard}>
+                <View style={styles.contactInfo}>
+                  <Text style={styles.contactLabel}>Phone</Text>
+                  <Text style={styles.contactValue}>{userData.phone}</Text>
+                </View>
+
+                <View style={styles.contactInfo}>
+                  <Text style={styles.contactLabel}>Email</Text>
+                  <Text style={styles.contactValue}>{userData.email}</Text>
+                </View>
+              </View>
             </View>
+          </>
+        )}
+
+      </View>
+
+      {/* Contact Info */}
+      {userData && (
+        <View style={styles.contactInfoContainer}>
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactLabel}>Phone</Text>
+            <Text style={styles.contactValue}>{userData.phone}</Text>
+          </View>
+          <View style={styles.contactDivider} />
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactLabel}>Email</Text>
+            <Text style={styles.contactValue}>{userData.email}</Text>
           </View>
         </View>
-      </View>
+      )}
 
       <ScrollView style={styles.settingsContainer} showsVerticalScrollIndicator={false}>
         {/* General Settings */}
@@ -154,7 +187,7 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.settingOptionTitle}>FAQs</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={[styles.settingOption, { borderBottomWidth: 0 }]} onPress={handleNotificationsPress}>
             <View style={styles.settingOptionIconContainer}>
               <Icon name="notifications-outline" size={24} color={colors.primary} />
@@ -174,7 +207,7 @@ export default function SettingsScreen() {
       </ScrollView>
 
 
-     
+
       {/* Logout Confirmation Modal */}
       <Modal visible={showLogoutModal} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
@@ -423,7 +456,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontWeight: "600"
   },
-  
+
   navItem: {
     alignItems: "center",
     justifyContent: "center",

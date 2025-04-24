@@ -56,6 +56,8 @@ const Login = () => {
           email: user.email,
           phone: user.phone,
           is_active: user.is_active,
+          profile_picture: user.profile_picture, // Add profile_picture here
+
         });
 
         Toast.show({
