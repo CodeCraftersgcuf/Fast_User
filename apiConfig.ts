@@ -27,6 +27,9 @@ const API_ENDPOINTS = {
     UpdateAddress: API_DOMAIN + '/address/update',
     DeleteAddress: API_DOMAIN + '/address/delete',
 
+    
+    ChatInbox: API_DOMAIN + "/chat/inbox",
+
     EditProfile: API_DOMAIN + "/user/update-profile",
 
     GetFaqs: API_DOMAIN + '/faqs/user',

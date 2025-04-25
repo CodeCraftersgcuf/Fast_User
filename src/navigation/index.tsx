@@ -331,6 +331,7 @@ function HomeStack() {
       <Stack.Screen name="UserDetails" component={UserDetails} />
       <Stack.Screen name="Notification" component={NotificationsScreen} />
       <Stack.Screen name="ActiveDeliveries" component={ActiveDeliveries} />
+      <Stack.Screen name="Wallet" component={WalletScreen} />
       <Stack.Screen name="RideSummary" component={RideSummary} />
       <Stack.Screen name="DeliveryDetails" component={DeliveryDetails} />
       <Stack.Screen name="RideDetailsMap" component={RideDetailsMap} />

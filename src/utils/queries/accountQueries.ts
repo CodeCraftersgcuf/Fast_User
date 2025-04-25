@@ -15,6 +15,10 @@ export const getAddressList = async (token: string): Promise<any> => {
   return await apiCall(API_ENDPOINTS.USER.ListAddress, "GET", undefined, token);
 };
 
+export const getChatInbox = async (token: string): Promise<any> => {
+  return await apiCall(API_ENDPOINTS.USER.ChatInbox, "GET", undefined, token);
+}
+
 export const getUserProfile = async (
   token: string
 ): Promise<IUserProfileResponse> => {

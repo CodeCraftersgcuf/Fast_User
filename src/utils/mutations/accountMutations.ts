@@ -11,11 +11,9 @@ export const createAddress = async ({
     address: string;
     city: string;
     state: string;
-    user_id: string;
     type: string;
   }; // Frontend field names
   token: string;
-  id: string;
 }) => {
   console.log("Sending request with this: ", data);
   // Make the API call with the mapped data
@@ -31,8 +29,7 @@ export const updateAddress = async ({
     address: string;
     city: string;
     state: string;
-    country: string;
-    zip_code: string;
+    type: string;
   }; // Frontend field names
   token: string;
   id: string;
@@ -87,6 +84,7 @@ export const CreateParcelStep1 = async ({
 }) => {
   console.log("Sending request with this: ", data);
   // Make the API call with the mapped data
+  console.log("For the Step 1 Parcel: ", data);
   return await apiCall(
     API_ENDPOINTS.PARCEL.CreateParcelStep1,
     "POST",
@@ -109,6 +107,7 @@ export const CreateParcelStep2 = async ({
   };
   token: string;
 }) => {
+  console.log("For the Step 2 Parcel: ", data);
   return await apiCall(
     `${API_ENDPOINTS.PARCEL.CreateParcelStep2(id)}`,
     "POST",
@@ -130,6 +129,7 @@ export const CreateParcelStep3 = async ({
   };
   token: string;
 }) => {
+  console.log("For the Step 3 Parcel: ", data);
   return await apiCall(
     `${API_ENDPOINTS.PARCEL.CreateParcelStep3(id)}`,
     "POST",
@@ -152,6 +152,7 @@ export const CreateParcelStep4 = async ({
   };
   token: string;
 }) => {
+  console.log("For the Step 4 Parcel: ", data);
   return await apiCall(
     `${API_ENDPOINTS.PARCEL.CreateParcelStep4(id)}`,
     "POST",

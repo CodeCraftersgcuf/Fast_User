@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Modal, ScrollView } from "react-native"
+import React, { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Modal, ScrollView, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import Icon from "react-native-vector-icons/Ionicons"
@@ -11,6 +11,17 @@ type AddressScreenNavigationProp = NativeStackNavigationProp<RootStackParamList,
 
 type AddressType = "Home" | "Work"
 type TabType = "Home" | "Work"
+
+
+//Code Related to the integration;
+import { useMutation } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
+import { createAddress, deleteAddress, updateAddress } from "../../utils/mutations/accountMutations"
+import { getAddressList } from "../../utils/queries/accountQueries"
+import Toast from "react-native-toast-message";
+import Loader from "../../components/Loader"
+import { getFromStorage } from "../../utils/storage";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SavedAddress {
   id: string
@@ -23,61 +34,177 @@ interface SavedAddress {
 
 export default function AddressScreen() {
   const navigation = useNavigation<AddressScreenNavigationProp>()
-  
+  const [token, setToken] = useState<string | null>(null); // State to hold the token
+
   const [addressType, setAddressType] = useState<AddressType>("Home")
   const [searchText, setSearchText] = useState("")
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showSavedAddresses, setShowSavedAddresses] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>("Home")
-  
-  const [savedAddresses] = useState<SavedAddress[]>([
-    {
-      id: "1",
-      type: "Home",
-      title: "Address 1",
-      state: "Lagos",
-      city: "Ikeja",
-      address: "No 2, Abcdefgh street, ghijk"
+
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+  const [editingAddress, setEditingAddress] = useState<SavedAddress | null>(null)
+  const [city, setCity] = useState("")
+  const [state, setState] = useState("")
+
+
+  const queryClient = useQueryClient();
+
+
+
+  const { data: addressList, isLoading: addressListLoading } = useQuery({
+    queryKey: ["addressList", token],
+    queryFn: () => getAddressList(token),
+    enabled: !!token, // Only run the query if token is available
+  })
+  const { mutate: createAddressMutation } = useMutation({
+    mutationFn: createAddress,
+    onSuccess: (data) => {
+      console.log("Address created successfully:", data)
+      Toast.show({
+        type: "success",
+        text1: "Address created successfully",
+      })
     },
-    {
-      id: "2",
-      type: "Home",
-      title: "Address 2",
-      state: "Lagos",
-      city: "Ikeja",
-      address: "No 2, Abcdefgh street, ghijk"
+    onError: (error) => {
+      console.error("Error creating address:", error)
+      Toast.show({
+        type: "error",
+        text1: "Error creating address",
+      })
     },
-    {
-      id: "3",
-      type: "Work",
-      title: "Address 1",
-      state: "Lagos",
-      city: "Ikeja",
-      address: "No 2, Abcdefgh street, ghijk"
-    }
-  ])
-  
+  })
+  console.log("Address List:", addressList);
+  const { mutate: updateAddressMutation } = useMutation({
+    mutationFn: updateAddress,
+    onSuccess: (data) => {
+      console.log("Address updated successfully:", data)
+      Toast.show({
+        type: "success",
+        text1: "Address updated successfully",
+      })
+    },
+    onError: (error) => {
+      console.error("Error updating address:", error)
+      Toast.show({
+        type: "error",
+        text1: "Error updating address",
+      })
+    },
+  })
+  const { mutate: deleteAddressMutation } = useMutation({
+    mutationFn: deleteAddress,
+    onSuccess: (data) => {
+      console.log("Address deleted successfully:", data);
+      Toast.show({
+        type: "success",
+        text1: "Address deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["addressList", token] }); // 🔄 Refetch
+    },
+    onError: (error) => {
+      console.error("Error deleting address:", error);
+      Toast.show({
+        type: "error",
+        text1: "Error deleting address",
+      });
+    },
+  });
+
   const handleSave = () => {
-    // Save address logic here
-    navigation.goBack()
-  }
-  
+    if (!token) return;
+
+    const payload = {
+      address: searchText,
+      city: city || "Ikeja",
+      state: state || "Lagos",
+      type: addressType,
+    };
+
+    if (editingAddress) {
+      updateAddressMutation({
+        data: payload,
+        id: editingAddress.id, // 🔥 ensure ID is passed
+        token,
+      });
+    } else {
+      createAddressMutation({
+        data: payload,
+        token,
+      });
+    }
+
+    // Reset form and state
+    setEditingAddress(null);
+    setSearchText("");
+    setCity("");
+    setState("");
+    setAddressType("Home");
+    setShowSavedAddresses(false);
+  };
+
+
+
   const handleViewSavedAddresses = () => {
     setShowSavedAddresses(true)
   }
-  
+
   const handleEditAddress = (address: SavedAddress) => {
-    // Edit address logic here
-    console.log("Edit address:", address)
-  }
-  
+    setSearchText(address.address);
+    setAddressType(address.type.charAt(0).toUpperCase() + address.type.slice(1).toLowerCase() as AddressType);
+    setCity(address.city);
+    setState(address.state);
+    setEditingAddress(address); // 💡 store the whole object for ID access
+    setShowSavedAddresses(false); // go back to form screen
+  };
+
   const handleDeleteAddress = (address: SavedAddress) => {
-    // Delete address logic here
-    console.log("Delete address:", address)
-  }
+    if (!token) return;
+
+    Alert.alert(
+      "Delete Address",
+      "Are you sure you want to delete this address?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          onPress: () => {
+            deleteAddressMutation({
+              data: { id: address.id },
+              token,
+            });
+          },
+          style: "destructive",
+        },
+      ]
+    );
+  };
+
+  // First: fetch and set token
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Second: Normalize address list into savedAddresses (after any mutation)
+  useEffect(() => {
+    if (addressList?.data) {
+      const normalized = addressList.data.map((item) => ({
+        ...item,
+        type: item.type.toLowerCase(), // normalize to "home" or "work"
+      }));
+      setSavedAddresses(normalized);
+    }
+  }, [addressList]);
   
-  const filteredAddresses = savedAddresses.filter(address => address.type === activeTab)
-  
+  const filteredAddresses = savedAddresses.filter(
+    (address) => address.type.toLowerCase() === activeTab.toLowerCase()
+  );
   const renderAddressScreen = () => (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -87,20 +214,20 @@ export default function AddressScreen() {
         <Text style={styles.headerTitle}>Address</Text>
         <View style={styles.headerRight} />
       </View>
-      
+
       <View style={styles.content}>
         <Text style={styles.sectionTitle}>Address Type</Text>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.selectField}
           onPress={() => setShowCategoryModal(true)}
         >
           <Text style={styles.selectFieldText}>{addressType}</Text>
           <Icon name="chevron-down" size={24} color="#000000" />
         </TouchableOpacity>
-        
+
         <Text style={styles.sectionTitle}>Search</Text>
-        
+
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#999999" style={styles.searchIcon} />
           <TextInput
@@ -114,26 +241,26 @@ export default function AddressScreen() {
             <Icon name="location" size={20} color="#000000" />
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.viewSavedButton}
           onPress={handleViewSavedAddresses}
         >
           <Text style={styles.viewSavedButtonText}>View Saved Addresses</Text>
         </TouchableOpacity>
       </View>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={styles.saveButton}
         onPress={handleSave}
       >
         <Text style={styles.saveButtonText}>Save</Text>
       </TouchableOpacity>
-      
-      
+      <Toast />
+
     </SafeAreaView>
   )
-  
+
   const renderSavedAddressesScreen = () => (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -143,75 +270,88 @@ export default function AddressScreen() {
         <Text style={styles.headerTitle}>Saved Address</Text>
         <View style={styles.headerRight} />
       </View>
-      
+
       <View style={styles.content}>
         <View style={styles.tabContainer}>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === "Home" && styles.activeTab]} 
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "Home" && styles.activeTab]}
             onPress={() => setActiveTab("Home")}
           >
             <Text style={[styles.tabText, activeTab === "Home" && styles.activeTabText]}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === "Work" && styles.activeTab]} 
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "Work" && styles.activeTab]}
             onPress={() => setActiveTab("Work")}
           >
             <Text style={[styles.tabText, activeTab === "Work" && styles.activeTabText]}>Work</Text>
           </TouchableOpacity>
         </View>
-        
+
         <ScrollView style={styles.addressList}>
-          {filteredAddresses.map((address) => (
-            <View key={address.id} style={styles.addressCard}>
-              <View style={styles.addressHeader}>
-                <View style={styles.addressTitleContainer}>
-                  <Icon name="location" size={16} color="#800080" />
-                  <Text style={styles.addressTitle}>{address.title}</Text>
+          {filteredAddresses.length === 0 ? (
+            <Text style={{ textAlign: "center", marginTop: 24, color: "#999", fontSize: 14 }}>
+              No saved addresses found for {activeTab}.
+            </Text>
+          ) : (
+            filteredAddresses.map((address) => (
+              <View key={address.id} style={styles.addressCard}>
+                <View style={styles.addressHeader}>
+                  <View style={styles.addressTitleContainer}>
+                    <Icon name="location" size={16} color="#800080" />
+                    <Text style={styles.addressTitle}>
+                      {address.city}, {address.state}
+                    </Text>
+                  </View>
+                  <View style={styles.addressActions}>
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={() => handleEditAddress(address)}
+                    >
+                      <Text style={styles.editButtonText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteAddress(address)}
+                    >
+                      <Text style={styles.deleteButtonText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.addressActions}>
-                  <TouchableOpacity 
-                    style={styles.editButton}
-                    onPress={() => handleEditAddress(address)}
-                  >
-                    <Text style={styles.editButtonText}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteAddress(address)}
-                  >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
-                  </TouchableOpacity>
+
+                <View style={styles.addressDetails}>
+                  <View style={styles.addressDetailColumn}>
+                    <Text style={styles.addressDetailLabel}>State</Text>
+                    <Text style={styles.addressDetailValue}>{address.state}</Text>
+                  </View>
+                  <View style={styles.addressDetailColumn}>
+                    <Text style={styles.addressDetailLabel}>City</Text>
+                    <Text style={styles.addressDetailValue}>{address.city}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.addressFullDetail}>
+                  <Text style={styles.addressDetailLabel}>Address</Text>
+                  <Text style={styles.addressDetailValue}>{address.address}</Text>
                 </View>
               </View>
-              
-              <View style={styles.addressDetails}>
-                <View style={styles.addressDetailColumn}>
-                  <Text style={styles.addressDetailLabel}>State</Text>
-                  <Text style={styles.addressDetailValue}>{address.state}</Text>
-                </View>
-                <View style={styles.addressDetailColumn}>
-                  <Text style={styles.addressDetailLabel}>City</Text>
-                  <Text style={styles.addressDetailValue}>{address.city}</Text>
-                </View>
-              </View>
-              
-              <View style={styles.addressFullDetail}>
-                <Text style={styles.addressDetailLabel}>Address</Text>
-                <Text style={styles.addressDetailValue}>{address.address}</Text>
-              </View>
-            </View>
-          ))}
+            ))
+          )}
         </ScrollView>
       </View>
-      
-     
     </SafeAreaView>
-  )
-  
+  );
+
+
   return (
     <>
-      {showSavedAddresses ? renderSavedAddressesScreen() : renderAddressScreen()}
-      
+      {addressListLoading ? (
+        <Loader />
+      ) : showSavedAddresses ? (
+        renderSavedAddressesScreen()
+      ) : (
+        renderAddressScreen()
+      )}
+
       {/* Category Selection Modal */}
       <Modal
         visible={showCategoryModal}
@@ -227,8 +367,8 @@ export default function AddressScreen() {
                 <Icon name="close" size={24} color="#000000" />
               </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.categoryOption}
               onPress={() => {
                 setAddressType("Home")
@@ -240,8 +380,8 @@ export default function AddressScreen() {
                 {addressType === "Home" && <View style={styles.radioButtonSelected} />}
               </View>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.categoryOption}
               onPress={() => {
                 setAddressType("Work")
@@ -255,6 +395,7 @@ export default function AddressScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        <Toast />
       </Modal>
     </>
   )

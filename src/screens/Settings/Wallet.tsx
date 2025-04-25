@@ -28,7 +28,7 @@
 //   const [activeModal, setActiveModal] = useState<ModalType>("none")
 //   const [confirmationStatus, setConfirmationStatus] = useState<ConfirmationStatus>("none")
 //   const [isLoading, setIsLoading] = useState(false)
-  
+
 //   // Form states
 //   const [withdrawAmount, setWithdrawAmount] = useState("")
 //   const [bankName, setBankName] = useState("")
@@ -95,7 +95,7 @@
 
 //   const handlePlaceWithdrawal = () => {
 //     if (!withdrawAmount || !bankName || !accountName || !accountNumber) return
-    
+
 //     setIsLoading(true)
 //     // Simulate API call
 //     setTimeout(() => {
@@ -195,7 +195,7 @@
 
 //       <View style={styles.transactionsContainer}>
 //         <Text style={styles.transactionsTitle}>Transactions</Text>
-        
+
 //         <View style={styles.filterContainer}>
 //           <TouchableOpacity 
 //             style={[styles.filterButton, filter === "all" && styles.activeFilter]} 
@@ -411,9 +411,9 @@
 //             >
 //               <Icon name="close" size={24} color="#000000" />
 //             </TouchableOpacity>
-            
+
 //             <Text style={styles.confirmationTitle}>Payment Confirmation</Text>
-            
+
 //             <View style={styles.confirmationIconContainer}>
 //               <View style={[
 //                 styles.confirmationIconOuter,
@@ -431,7 +431,7 @@
 //                 </View>
 //               </View>
 //             </View>
-            
+
 //             <Text style={styles.confirmationText}>
 //               {activeModal === "topup" ? (
 //                 confirmationStatus === "success" 
@@ -841,7 +841,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -857,6 +857,8 @@ import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import Icon from "react-native-vector-icons/Ionicons"
 import type { SettingsStackParamList } from "../../types/navigation"
+
+import { RouteProp, useRoute } from "@react-navigation/native"
 
 type WalletScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, "Wallet">
 
@@ -900,10 +902,22 @@ export default function WalletScreen() {
     { id: "10", type: "topup", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
   ])
 
+  // 👇 Add this inside the component
+  const route = useRoute<RouteProp<SettingsStackParamList, "Wallet">>()
+  const modalTypeFromRoute = route.params?.modalType as ModalType | undefined
+
+  useEffect(() => {
+    const validModals: ModalType[] = ["topup", "withdraw"]
+    if (modalTypeFromRoute && validModals.includes(modalTypeFromRoute)) {
+      setActiveModal(modalTypeFromRoute)
+    }
+  }, [modalTypeFromRoute])
+
   const filteredTransactions = transactions.filter((transaction) => {
     if (filter === "all") return true
     return transaction.type === filter
   })
+
 
   const handleTopup = () => {
     setActiveModal("topup")
@@ -1011,9 +1025,9 @@ export default function WalletScreen() {
           <Icon name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.notificationButton}>
+          {/* <TouchableOpacity style={styles.notificationButton}>
             <Icon name="notifications" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 

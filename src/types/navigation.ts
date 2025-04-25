@@ -75,13 +75,15 @@ export type RootStackParamList = {
   
   export type SettingsStackParamList = {
     SettingsMain: undefined
-    Wallet: undefined
+    Wallet: { modalType?: "topup" | "withdraw" } | undefined;
+
     Support: undefined
     Address: undefined
     Notifications: undefined
     FAQs: undefined
     EditProfile: undefined
     SavedAddresses: undefined
+    
   }
   
 export type DeliveriesStackParamList = {

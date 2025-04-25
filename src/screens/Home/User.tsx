@@ -95,10 +95,14 @@ export default function User() {
   const handleTopUp = () => {
     console.log("Top up pressed");
     // Navigate to top up screen
+    navigation.navigate("Wallet", { modalType: "topup" })
+
   };
 
   const handleWithdraw = () => {
     console.log("Withdraw pressed");
+    navigation.navigate("Wallet", { modalType: "withdraw" });
+
     // Navigate to withdraw screen
   };
 
