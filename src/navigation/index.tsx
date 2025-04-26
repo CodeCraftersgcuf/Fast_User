@@ -53,6 +53,7 @@ import BankDetails from "../screens/SendParcel/BankDetails"
 // Track Parcel and Delivered
 import DeliveredSummary from "../screens/SendParcel/DeliveredSummary"
 import ChatScreen from "../screens/Chat"
+import ChatRoomScreen from "../screens/Chat/ChatRoomScreen"
 import SettingsScreen from "../screens/Settings"
 
 // Settings Screens
@@ -265,6 +266,7 @@ function SettingsNavigator() {
       <SettingsStack.Screen name="Wallet" component={WalletScreen} />
       <SettingsStack.Screen name="Support" component={SupportScreen} />
       <SettingsStack.Screen name="Address" component={AddressScreen} />
+      <SettingsStack.Screen name="MapSelect" component={MapSelect} />
       <SettingsStack.Screen name="Notifications" component={NotificationsScreen} />
       <SettingsStack.Screen name="FAQs" component={FAQsScreen} />
       <SettingsStack.Screen name="EditProfile" component={EditProfileScreen} />
@@ -335,6 +337,7 @@ function HomeStack() {
       <Stack.Screen name="RideSummary" component={RideSummary} />
       <Stack.Screen name="DeliveryDetails" component={DeliveryDetails} />
       <Stack.Screen name="RideDetailsMap" component={RideDetailsMap} />
+      <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
     </Stack.Navigator>
   )
 }
@@ -351,6 +354,7 @@ function TabNavigator() {
       <Tab.Screen name="Deliveries" component={DeliveriesNavigator} options={{ tabBarButton: () => null }} />
       <Tab.Screen name="Add" component={SendParcelNavigator} options={{ tabBarButton: () => null }} />
       <Tab.Screen name="Chat" component={ChatScreen} options={{ tabBarButton: () => null }} />
+
       <Tab.Screen name="Settings" component={SettingsNavigator} options={{ tabBarButton: () => null }} />
     </Tab.Navigator>
   )
@@ -425,6 +429,7 @@ export function Navigation() {
       "RideHistory",
       "RidesDetails",
       "DeliveredSummary",
+      "ChatRoomScreen",
 
 
 
@@ -456,24 +461,30 @@ export function Navigation() {
     <NavigationContainer ref={navigationRef} onStateChange={handleNavigationStateChange}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
-          <Stack.Screen name="MainApp" options={{ headerShown: false }}>
-            {() => (
-              <View style={styles.container}>
-                <TabNavigator />
-                {!hideTabBar && (
-                  <View style={styles.tabBarWrapper}>
-                    <TabBar activeTab={currentTab} onTabPress={handleTabPress} />
-                  </View>
-                )}
-              </View>
-            )}
-          </Stack.Screen>
+          <>
+            <Stack.Screen name="MainApp">
+              {() => (
+                <View style={styles.container}>
+                  <TabNavigator />
+                  {!hideTabBar && (
+                    <View style={styles.tabBarWrapper}>
+                      <TabBar activeTab={currentTab} onTabPress={handleTabPress} />
+                    </View>
+                  )}
+                </View>
+              )}
+            </Stack.Screen>
+
+            {/* ✅ ChatRoom is available globally when authenticated */}
+            <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
+          </>
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
   )
+
 }
 
 const styles = StyleSheet.create({

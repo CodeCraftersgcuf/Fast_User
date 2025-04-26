@@ -48,8 +48,8 @@ export default function LocationSelect() {
   }
 
   const handleMapPress = (type: "sender" | "receiver") => {
-    navigation.navigate("MapSelect", { type })
-  }
+    navigation.replace("MapSelect", { type });
+  };
 
   const handleProceed = () => {
     if (deliveryDetails.senderAddress && deliveryDetails.receiverAddress) {
@@ -84,25 +84,29 @@ export default function LocationSelect() {
       <View style={styles.content}>
         {/* Sender Location */}
         <View style={styles.locationSection}>
-          <View style={styles.locationHeader}>
-            <View style={[styles.locationIcon, { backgroundColor: "#00A651" }]}>
-              <Icon name="locate" size={24} color={colors.white} />
-            </View>
-            <Text style={styles.locationTitle}>Sender Location</Text>
-          </View>
+          <TouchableOpacity onPress={() => handleMapPress("sender")} activeOpacity={0.8}>
+            <View>
+              <View style={styles.locationHeader}>
+                <View style={[styles.locationIcon, { backgroundColor: "#00A651" }]}>
+                  <Icon name="locate" size={24} color={colors.white} />
+                </View>
+                <Text style={styles.locationTitle}>Sender Location</Text>
+              </View>
 
-          <View style={styles.searchContainer}>
-            <Icon name="search" size={20} color={colors.text.secondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Location"
-              value={deliveryDetails.senderAddress}
-              editable={false}
-            />
-            <TouchableOpacity onPress={() => handleMapPress("sender")}>
-              <Icon name="location" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-          </View>
+              <View style={styles.searchContainer}>
+                <Icon name="search" size={20} color={colors.text.secondary} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search Location"
+                  value={deliveryDetails.senderAddress}
+                  editable={false}
+                  pointerEvents="none" // Optional: to prevent focus flashing
+                />
+                <Icon name="location" size={20} color={colors.text.secondary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+
 
           <View style={styles.addressButtons}>
             <TouchableOpacity style={styles.addressButton} onPress={handleHomePress}>
@@ -122,32 +126,34 @@ export default function LocationSelect() {
         </View>
 
         {/* Receiver Location */}
-        <View style={styles.locationSection}>
-          <View style={styles.locationHeader}>
-            <View style={[styles.locationIcon, { backgroundColor: "#FF0000" }]}>
-              <Icon name="locate" size={24} color={colors.white} />
+        <TouchableOpacity onPress={() => handleMapPress("receiver")} activeOpacity={0.8}>
+          <View style={styles.locationSection}>
+            <View style={styles.locationHeader}>
+              <View style={[styles.locationIcon, { backgroundColor: "#FF0000" }]}>
+                <Icon name="locate" size={24} color={colors.white} />
+              </View>
+              <Text style={styles.locationTitle}>Receiver Location</Text>
             </View>
-            <Text style={styles.locationTitle}>Receiver Location</Text>
-          </View>
 
-          <View style={styles.searchContainer}>
-            <Icon name="search" size={20} color={colors.text.secondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Location"
-              value={deliveryDetails.receiverAddress}
-              editable={false}
-            />
-            <TouchableOpacity onPress={() => handleMapPress("receiver")}>
+            <View style={styles.searchContainer}>
+              <Icon name="search" size={20} color={colors.text.secondary} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search Location"
+                value={deliveryDetails.receiverAddress}
+                editable={false}
+                pointerEvents="none"
+              />
               <Icon name="location" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-          </View>
+            </View>
 
-          <TouchableOpacity style={styles.mapButton} onPress={() => handleMapPress("receiver")}>
-            <Icon name="map-outline" size={20} color={colors.text.primary} />
-            <Text style={styles.mapButtonText}>Choose on Map</Text>
-          </TouchableOpacity>
-        </View>
+            <View style={styles.mapButton}>
+              <Icon name="map-outline" size={20} color={colors.text.primary} />
+              <Text style={styles.mapButtonText}>Choose on Map</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
       </View>
 
       <TouchableOpacity

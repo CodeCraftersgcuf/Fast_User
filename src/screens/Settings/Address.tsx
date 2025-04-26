@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Modal, ScrollView, Alert } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useRoute } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import Icon from "react-native-vector-icons/Ionicons"
 import type { RootStackParamList } from "../../types/navigation"
@@ -49,6 +49,8 @@ export default function AddressScreen() {
 
 
   const queryClient = useQueryClient();
+
+  const route = useRoute();
 
 
 
@@ -201,10 +203,25 @@ export default function AddressScreen() {
       setSavedAddresses(normalized);
     }
   }, [addressList]);
-  
+
   const filteredAddresses = savedAddresses.filter(
     (address) => address.type.toLowerCase() === activeTab.toLowerCase()
   );
+
+// 📍 When coming from Address screen
+const handleMapPress = (type: "address" | "address") => {
+  navigation.replace("MapSelect", {
+    type,
+    from: "Address", // still passing correctly
+  });
+};
+
+  useEffect(() => {
+    if (route.params?.fromMap && route.params?.selectedAddress) {
+      setSearchText(route.params.selectedAddress);
+    }
+  }, [route.params]);
+  
   const renderAddressScreen = () => (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -226,21 +243,25 @@ export default function AddressScreen() {
           <Icon name="chevron-down" size={24} color="#000000" />
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Search</Text>
+        <TouchableOpacity onPress={() => handleMapPress("sender")}>
+          <Text style={styles.sectionTitle}>Search</Text>
 
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color="#999999" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Location"
-            placeholderTextColor="#999999"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-          <TouchableOpacity style={styles.locationButton}>
-            <Icon name="location" size={20} color="#000000" />
-          </TouchableOpacity>
-        </View>
+          <View style={styles.searchContainer}>
+            <Icon name="search" size={20} color="#999999" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search Location"
+              placeholderTextColor="#999999"
+              value={searchText}
+              editable={false} // Prevent typing since it's just for display
+              pointerEvents="none" // Disable tap on input
+            />
+            <View style={styles.locationButton}>
+              <Icon name="location" size={20} color="#000000" />
+            </View>
+          </View>
+        </TouchableOpacity>
+
 
         <TouchableOpacity
           style={styles.viewSavedButton}

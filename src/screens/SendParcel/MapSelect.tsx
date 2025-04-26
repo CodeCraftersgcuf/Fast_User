@@ -27,6 +27,7 @@ export default function MapSelect() {
   const [selectedLocation, setSelectedLocation] = useState({
     latitude: 40.7128,
     longitude: -74.006,
+    addressText: "",
   });
 
   const mapRef = useRef<MapView>(null);
@@ -36,19 +37,36 @@ export default function MapSelect() {
   };
 
   const handleSelect = () => {
-    const address = `${selectedLocation.latitude.toFixed(6)}, ${selectedLocation.longitude.toFixed(6)}`;
-    const type = route.params?.type || "sender";
-
+    const address =
+      selectedLocation.addressText ||
+      `${selectedLocation.latitude.toFixed(6)}, ${selectedLocation.longitude.toFixed(6)}`;
+  
+    const type = route.params?.type || "sender"; // could be sender / receiver / address
+    const from = route.params?.from || "LocationSelect"; // default fallback
+  
     updateDeliveryDetails({
       [type === "sender" ? "senderAddress" : "receiverAddress"]: address,
     });
-
-    navigation.navigate("LocationSelect", {
-      selectedAddress: address,
-      type,
-      fromMap: true,
-    });
+  
+    // New Correct Condition using `replace`
+    if (from === "Address") {
+      navigation.replace("Address", { // ✅ REPLACE, not navigate
+        selectedAddress: address,
+        type,
+        fromMap: true,
+      });
+    } else {
+      navigation.replace("LocationSelect", { // ✅ REPLACE, not navigate
+        selectedAddress: address,
+        type,
+        fromMap: true,
+      });
+    }
   };
+  
+  
+
+
 
   return (
     <View style={styles.container}>
@@ -78,6 +96,7 @@ export default function MapSelect() {
               const newLocation = {
                 latitude: lat,
                 longitude: lng,
+                addressText: details?.formatted_address || data.description,
               };
               setSelectedLocation(newLocation);
               if (mapRef.current) {
