@@ -1,5 +1,5 @@
 // ChatRoomScreen.tsx
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -18,6 +18,9 @@ import { RootStackParamList } from "../../types/navigation"
 
 type ChatItem = RootStackParamList["ChatRoom"]["chat"]
 
+type RootStackParamList = {
+  ChatRoom: { chatId: number };
+};
 interface Message {
   id: string
   text: string
@@ -25,37 +28,91 @@ interface Message {
   timestamp: string
 }
 
-export default function ChatRoomScreen() {
-  const navigation = useNavigation()
-  const route = useRoute<RouteProp<RootStackParamList, "ChatRoom">>()
-  const activeChat = route.params.chat
+//Code Related to the Integration;
+import { useQuery } from "@tanstack/react-query"
+import { getSingleChatInbox } from "../../utils/queries/accountQueries"
+import { getFromStorage } from "../../utils/storage"
+import { useMutation } from "@tanstack/react-query"
+import { sendMessage } from "../../utils/mutations/accountMutations"
 
-  const [messageText, setMessageText] = useState("")
-  const [messages, setMessages] = useState<Message[]>([
-    { id: "1", text: "Hello! I'm on my way.", sender: "rider", timestamp: "10:30 AM" },
-    { id: "2", text: "Great, thanks!", sender: "user", timestamp: "10:32 AM" },
-  ])
+
+export default function ChatRoomScreen() {
+  const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, "ChatRoom">>();
+  const { chatId } = route.params; // ✅ getting id passed
+
+  const [token, setToken] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+    fetchToken();
+  }, []);
+
+  const { data: chatData, isLoading: chatLoading } = useQuery({
+    queryKey: ["singleChatInbox", token, chatId],
+    queryFn: () => getSingleChatInbox(token!, chatId.toString()),
+    enabled: !!token && !!chatId,
+    refetchInterval: 1000,
+  });
+  
+  const { mutate: sendMessageMutation, isLoading: isSending } = useMutation({
+    mutationFn: sendMessage,
+    onSuccess: () => console.log("Message sent successfully"),
+    onError: (error) => console.error("Error sending message:", error),
+  });
+  useEffect(() => {
+    if (chatData?.data) {
+      const normalizedMessages = chatData.data.map((item: any) => ({
+        id: item.id.toString(),
+        text: item.message,
+        sender: item.sender_id === chatId ? "rider" : "user", // small assumption based on ids
+        timestamp: new Date(item.sent_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }));
+      setMessages(normalizedMessages);
+    }
+  }, [chatData, chatId]);
 
   const handleSendMessage = () => {
-    if (!messageText.trim()) return
-
+    if (!messageText.trim() || !token) return;
+  
+    const receiverId = messages.length > 0 
+      ? messages[0].sender === "rider" 
+        ? chatId.toString() 
+        : messages[0].sender_id?.toString() || chatId.toString()
+      : chatId.toString();
+  
     const newMessage: Message = {
       id: Date.now().toString(),
       text: messageText,
       sender: "user",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    }
-
-    setMessages([...messages, newMessage])
-    setMessageText("")
-  }
+    };
+  
+    setMessages([...messages, newMessage]);
+    setMessageText("");
+  
+    sendMessageMutation({
+      data: {
+        receiver_id: receiverId,
+        message: messageText,
+      },
+      token,
+    });
+  };
+  
 
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={[styles.messageBubble, item.sender === "user" ? styles.userMessage : styles.riderMessage]}>
       <Text style={styles.messageText}>{item.text}</Text>
-      <Image source={activeChat.avatar} style={styles.messageAvatar} />
+      {/* Removed avatar here because we don't have avatar in message. */}
     </View>
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -68,10 +125,10 @@ export default function ChatRoomScreen() {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Icon name="chevron-back" size={24} color="#000000" />
           </TouchableOpacity>
-          <Image source={activeChat.avatar} style={styles.avatar} />
+          {/* No avatar shown because not available in this screen */}
           <View>
-            <Text style={styles.chatName}>{activeChat.name}</Text>
-            <Text style={styles.chatOrder}>{activeChat.orderId}</Text>
+            <Text style={styles.chatName}>Chat with Rider</Text>
+            <Text style={styles.chatOrder}>Order ID #{chatId}</Text>
           </View>
         </View>
 
@@ -95,7 +152,7 @@ export default function ChatRoomScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -147,6 +204,7 @@ const styles = StyleSheet.create({
   riderMessage: {
     backgroundColor: "#E5E5E5",
     alignSelf: "flex-start",
+    
     borderBottomLeftRadius: 0,
   },
   messageText: {

@@ -3,6 +3,27 @@ import { API_ENDPOINTS } from "../../../apiConfig";
 // import { ICooperateClient } from '@/app/createcoroporateaccount';
 import { apiCall } from "../customApiCall";
 
+
+
+
+export const sendMessage = async ({
+  data,
+  token,
+}: {  
+  data: {
+    receiver_id: string;
+    message: string;
+  };
+  token: string;
+}) => {
+  return await apiCall(
+    API_ENDPOINTS.USER.SendMessage,
+    "POST",
+    data,
+    token
+  );
+}
+
 export const createAddress = async ({
   data,
   token,

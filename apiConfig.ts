@@ -28,7 +28,9 @@ const API_ENDPOINTS = {
     DeleteAddress: API_DOMAIN + '/address/delete',
 
     
-    ChatInbox: API_DOMAIN + "/chat/inbox",
+    ChatInbox: API_DOMAIN + "/chat/connected-riders",
+    SingleChatInbox: API_DOMAIN + "/chat/messages",
+    SendMessage: API_DOMAIN + "/chat/send",
 
     EditProfile: API_DOMAIN + "/user/update-profile",
 

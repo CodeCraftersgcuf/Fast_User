@@ -1,5 +1,5 @@
 // ChatListScreen.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -25,9 +25,35 @@ interface ChatItem {
   unreadCount: number;
 }
 
+//Code Related to the Integration;
+import { useQuery } from "@tanstack/react-query"
+import { getChatInbox } from "../../utils/queries/accountQueries";
+import { getFromStorage } from "../../utils/storage";
+
+
+
+
 export default function ChatScreen() {
   const navigation = useNavigation<ChatScreenNavigationProp>();
+  const [token, setToken] = useState<string | null>(null);
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const { data: chatData, isLoading: chatLoading } = useQuery({
+    queryKey: ["chatInbox", token],
+    queryFn: () => getChatInbox(token),
+    enabled: !!token, // Only run the query if token is available
+  });
+  console.log("🔹 Chat Data:", chatData);
+  
   const chats: ChatItem[] = [
     {
       id: "1",
@@ -47,28 +73,26 @@ export default function ChatScreen() {
     },
     // ...rest
   ];
-
-  const renderChatItem = ({ item }: { item: ChatItem }) => (
+  const renderChatItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.chatItem}
-      onPress={() => navigation.navigate("ChatRoom", { chat: item })}
+      onPress={() => navigation.navigate("ChatRoom", { chatId: item.id })}
     >
-      <Image source={item.avatar} style={styles.avatar} />
+      <Image
+        source={{ uri: `https://fastlogistic.hmstech.xyz/storage/${item.profile_picture}` }}
+        style={styles.avatar}
+      />
       <View style={styles.chatInfo}>
         <Text style={styles.chatName}>{item.name}</Text>
-        <Text style={styles.chatOrderId}>{item.orderId}</Text>
+        <Text style={styles.chatOrderId}>{item.email}</Text> {/* Show email or order id if available */}
       </View>
       <View style={styles.chatMeta}>
-        <Text style={styles.chatTime}>{item.lastMessageTime}</Text>
-        {item.unreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadText}>{item.unreadCount} Unread</Text>
-          </View>
-        )}
+        {/* Optional: show dummy time or you can remove */}
+        <Text style={styles.chatTime}>Just now</Text>
       </View>
     </TouchableOpacity>
   );
-
+  
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -80,9 +104,11 @@ export default function ChatScreen() {
       </View>
 
       <FlatList
-        data={chats}
+      data={chatData?.data || []}
+
         renderItem={renderChatItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
+
         contentContainerStyle={styles.chatList}
       />
     </SafeAreaView>
