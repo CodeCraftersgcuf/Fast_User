@@ -11,6 +11,31 @@ export const getParcelList = async (token: string): Promise<any> => {
   );
 };
 
+export const getParcelBidList = async (
+  id: number | string,
+  token: string
+): Promise<any> => {
+  console.log("🔍 Fetching parcel bid list with:", id, token); // << SHOULD appear
+  return await apiCall(
+    API_ENDPOINTS.USER.ParcelBidList(id),
+    "GET",
+    undefined,
+    token
+  );
+};
+
+export const cancelParcel = async (
+  id: number | string,
+  token: string
+): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.ParcelCancel(id), // ✅ Use the function with id
+    "POST",
+    undefined,
+    token
+  );
+};
+
 export const getUserDeiliveryHistory = async (token: string): Promise<any> => {
   return await apiCall(
     API_ENDPOINTS.USER.DeliveryHistory,
@@ -94,109 +119,6 @@ export const getSingleTicket = async (
 export const markAllRead = async (token: string) => {
   return await apiCall(
     API_ENDPOINTS.ACCOUNT_MANAGEMENT.markAllNotificationsAsRead,
-    "GET",
-    undefined,
-    token
-  );
-};
-
-export const checkBvnStatus = async (
-  token: string
-): Promise<{ status: "active" | "pending" }> => {
-  return await apiCall(
-    API_ENDPOINTS.AUTH.CheckBvnStatus,
-    "GET",
-    undefined,
-    token
-  );
-};
-export const verifyBvnStatus = async (
-  token: string
-): Promise<{ status: "checked" | "unchecked" }> => {
-  return await apiCall(
-    API_ENDPOINTS.AUTH.CheckBvnVerified,
-    "GET",
-    undefined,
-    token
-  );
-};
-
-export const getBillPaymentHistory = async (
-  token: string
-): Promise<IBillTransactionResponse> => {
-  return await apiCall(
-    API_ENDPOINTS.ACCOUNT_MANAGEMENT.GetBillPaymentHistory,
-    "GET",
-    undefined,
-    token
-  );
-};
-export const getTransferHistory = async (
-  token: string
-): Promise<ITransferTransactionResponse> => {
-  return await apiCall(
-    API_ENDPOINTS.ACCOUNT_MANAGEMENT.GetTransferHistory,
-    "GET",
-    undefined,
-    token
-  );
-};
-export const generateBvnLinkAgain = async ({ token }: { token: string }) => {
-  return await apiCall(
-    API_ENDPOINTS.ACCOUNT_MANAGEMENT.RequestBvnConsent,
-    "POST",
-    undefined,
-    token
-  );
-};
-
-export const getFundAccountNo = async (
-  token: string
-): Promise<IFundAccResponse> => {
-  return await apiCall(
-    API_ENDPOINTS.MONEY_TRANSFER.GetFundAccountNo,
-    "GET",
-    undefined,
-    token
-  );
-};
-
-export const getBalance = async (token: string): Promise<IBalanceResposne> => {
-  return await apiCall(
-    API_ENDPOINTS.ACCOUNT_MANAGEMENT.GetBalance,
-    "GET",
-    undefined,
-    token
-  );
-};
-
-export const getMonthlyStats = async (
-  token: string
-): Promise<IStatsResponse> => {
-  return await apiCall(
-    API_ENDPOINTS.ACCOUNT_MANAGEMENT.GetMonthlyStats,
-    "GET",
-    undefined,
-    token
-  );
-};
-
-export const getYearlyStats = async (
-  token: string
-): Promise<IStatsResponse> => {
-  return await apiCall(
-    API_ENDPOINTS.ACCOUNT_MANAGEMENT.GetYearlyStats,
-    "GET",
-    undefined,
-    token
-  );
-};
-
-export const getQuarterlyStats = async (
-  token: string
-): Promise<IStatsResponse> => {
-  return await apiCall(
-    API_ENDPOINTS.ACCOUNT_MANAGEMENT.GetQuarterlyStats,
     "GET",
     undefined,
     token

@@ -49,6 +49,10 @@ export default function SenderReceiverDetails() {
   useEffect(() => {
     const fetchUserData = async () => {
       const fetchedToken = await getFromStorage("authToken");
+      const fetchedUser = await getFromStorage("user");
+      console.log("🔹 Retrieved User:", fetchedUser);
+      setSenderName(fetchedUser.name);
+      setSenderPhone(fetchedUser.phone);
       setToken(fetchedToken);
       console.log("🔹 Retrieved Token:", fetchedToken);
     };
@@ -238,6 +242,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+    paddingTop: 25,
   },
   keyboardAvoidingView: {
     flex: 1,

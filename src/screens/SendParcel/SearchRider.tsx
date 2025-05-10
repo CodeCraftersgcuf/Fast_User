@@ -1,29 +1,83 @@
-
-
-"use client"
 import { useEffect, useState } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { RouteProp, useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import Icon from "react-native-vector-icons/Ionicons"
 import type { SendParcelStackParamList } from "../../types/navigation"
 
 type SearchRidersNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "SearchRiders">
 
-export default function SearchRidersScreen({ route }: { route: { params: { amount: string } } }) {
+type RootStackParamList = {
+  SearchRiders: {
+    amount: string;
+    send_parcel_id: string;
+  };
+  // ... other routes
+};
+
+
+// Integration Related
+import { useQuery } from "@tanstack/react-query"
+import { getFromStorage } from "../../utils/storage"
+import { getParcelBidList } from "../../utils/queries/accountQueries"
+import { cancelParcel } from "../../utils/queries/accountQueries"
+import { useMutation } from "@tanstack/react-query"
+import { useIsFocused } from "@react-navigation/native";
+
+export default function SearchRidersScreen({ route }: { route: RouteProp<RootStackParamList, 'SearchRiders'> }) {
   const navigation = useNavigation<SearchRidersNavigationProp>()
+  const [token, setToken] = useState<string | null>(null)
   const [isSearching, setIsSearching] = useState(true)
-  const { amount } = route.params
+  const { amount, send_parcel_id } = route.params
+  const isFocused = useIsFocused();
+
+  console.log("🔹 Amount:, Send Parecel Id", amount, send_parcel_id);
+
+  const [hasNavigated, setHasNavigated] = useState(false) // 👈 Prevent multiple navigations
 
   useEffect(() => {
-    // Simulate finding riders after 3 seconds
-    const timer = setTimeout(() => {
-      setIsSearching(false)
-      navigation.navigate("RiderBid", { amount })
-    }, 3000)
+    const fetchToken = async () => {
+      const fetchedToken = await getFromStorage("authToken")
+      setToken(fetchedToken)
+      console.log("🔹 Retrieved Token:", fetchedToken)
+    }
+    fetchToken()
+  }, [])
 
-    return () => clearTimeout(timer)
-  }, [navigation, amount])
+  const { data: parcelBidList, isLoading: parcelBidListLoading } = useQuery({
+    queryKey: ["parcelBidList", token, send_parcel_id],
+    queryFn: () => getParcelBidList(send_parcel_id, token!),
+    enabled: !!token && !!send_parcel_id,
+    refetchInterval: isFocused ? 1000 : false, // ✅ Stop polling when not focused
+  })
+  console.log("🔹 Parcel Bid List Data:", parcelBidList);
+
+  const { mutate: cancelParcelMutation } = useMutation({
+    mutationFn: (parcelId: string) => cancelParcel(parcelId, token!),
+    onSuccess: () => {
+      console.log("✅ Parcel cancelled successfully")
+      navigation.goBack()
+    },
+    onError: (error) => {
+      console.error("❌ Error cancelling parcel:", error)
+    },
+  })
+
+  useEffect(() => {
+    if (
+      parcelBidList?.data?.bids &&
+      parcelBidList.data.bids.length > 0 &&
+      !hasNavigated
+    ) {
+      setIsSearching(false)
+      setHasNavigated(true)
+      navigation.navigate("RiderBid", {
+        amount,
+        parcel_id: send_parcel_id, // ✅ Pass this
+      })
+    }
+  }, [parcelBidList, hasNavigated, amount, send_parcel_id, navigation])
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -45,7 +99,24 @@ export default function SearchRidersScreen({ route }: { route: { params: { amoun
           </View>
         </View>
 
-        <Text style={styles.searchingText}>Searching for available riders</Text>
+        <Text style={styles.searchingText}>Searching for available riders...</Text>
+
+        <TouchableOpacity
+          onPress={() => cancelParcelMutation(send_parcel_id.toString())}
+          style={{
+            marginTop: 20,
+            backgroundColor: "#FF3B30",
+            paddingVertical: 12,
+            paddingHorizontal: 24,
+            borderRadius: 8,
+            alignSelf: "center",
+          }}
+        >
+          <Text style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 16 }}>
+            Cancel Parcel
+          </Text>
+        </TouchableOpacity>
+
       </View>
     </SafeAreaView>
   )

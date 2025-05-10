@@ -34,7 +34,8 @@ import { getSingleChatInbox } from "../../utils/queries/accountQueries"
 import { getFromStorage } from "../../utils/storage"
 import { useMutation } from "@tanstack/react-query"
 import { sendMessage } from "../../utils/mutations/accountMutations"
-
+import Loader from "../../components/Loader"
+import { useIsFocused } from "@react-navigation/native";
 
 export default function ChatRoomScreen() {
   const navigation = useNavigation();
@@ -44,6 +45,7 @@ export default function ChatRoomScreen() {
   const [token, setToken] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -58,9 +60,9 @@ export default function ChatRoomScreen() {
     queryKey: ["singleChatInbox", token, chatId],
     queryFn: () => getSingleChatInbox(token!, chatId.toString()),
     enabled: !!token && !!chatId,
-    refetchInterval: 1000,
+    refetchInterval: isFocused ? 1000 : false, // ✅ Stop polling when not focused
   });
-  
+
   const { mutate: sendMessageMutation, isLoading: isSending } = useMutation({
     mutationFn: sendMessage,
     onSuccess: () => console.log("Message sent successfully"),
@@ -80,23 +82,23 @@ export default function ChatRoomScreen() {
 
   const handleSendMessage = () => {
     if (!messageText.trim() || !token) return;
-  
-    const receiverId = messages.length > 0 
-      ? messages[0].sender === "rider" 
-        ? chatId.toString() 
+
+    const receiverId = messages.length > 0
+      ? messages[0].sender === "rider"
+        ? chatId.toString()
         : messages[0].sender_id?.toString() || chatId.toString()
       : chatId.toString();
-  
+
     const newMessage: Message = {
       id: Date.now().toString(),
       text: messageText,
       sender: "user",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
-  
+
     setMessages([...messages, newMessage]);
     setMessageText("");
-  
+
     sendMessageMutation({
       data: {
         receiver_id: receiverId,
@@ -105,7 +107,7 @@ export default function ChatRoomScreen() {
       token,
     });
   };
-  
+
 
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={[styles.messageBubble, item.sender === "user" ? styles.userMessage : styles.riderMessage]}>
@@ -125,19 +127,26 @@ export default function ChatRoomScreen() {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Icon name="chevron-back" size={24} color="#000000" />
           </TouchableOpacity>
-          {/* No avatar shown because not available in this screen */}
           <View>
             <Text style={styles.chatName}>Chat with Rider</Text>
             <Text style={styles.chatOrder}>Order ID #{chatId}</Text>
           </View>
         </View>
 
-        <FlatList
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messageList}
-        />
+        {chatLoading ? (
+          <Loader />
+        ) : messages.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ fontSize: 16, color: "#888" }}>No one available to chat.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.messageList}
+          />
+        )}
 
         <View style={styles.inputContainer}>
           <TextInput
@@ -153,12 +162,14 @@ export default function ChatRoomScreen() {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
+
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+    paddingTop: 25,
   },
   header: {
     flexDirection: "row",
@@ -204,7 +215,7 @@ const styles = StyleSheet.create({
   riderMessage: {
     backgroundColor: "#E5E5E5",
     alignSelf: "flex-start",
-    
+
     borderBottomLeftRadius: 0,
   },
   messageText: {

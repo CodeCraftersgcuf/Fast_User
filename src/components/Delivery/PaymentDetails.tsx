@@ -64,7 +64,8 @@ export default function PaymentDetails() {
 
   // Update the handleFeeConfirm function to navigate to SearchRider
   const handleFeeConfirm = () => {
-    setIsFeeModalVisible(false)
+    setIsFeeModalVisible(false);
+    console.log("Fee confirmed, amount:", amount);
     navigation.navigate("SearchRider", { amount })
   }
 

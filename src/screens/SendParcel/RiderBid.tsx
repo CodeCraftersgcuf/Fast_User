@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ImageSourcePropType } from "react-native"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from "react-native"
 import Icon from "react-native-vector-icons/Ionicons"
@@ -9,7 +7,15 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { SendParcelStackParamList } from "../../types/navigation"
 import pp from "../../assets/pp.png"
 
+
 type RiderBidsNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "RiderBids">
+
+//Code Related to the Integration;
+import { useQuery } from "@tanstack/react-query"
+import { getFromStorage } from "../../utils/storage"
+import { getParcelBidList } from "../../utils/queries/accountQueries"
+import Loader from "../../components/Loader"
+import { useIsFocused } from "@react-navigation/native";
 
 interface Rider {
   id: string
@@ -22,45 +28,60 @@ interface Rider {
   price: string
 }
 
-export default function RiderBids({ route }: { route: { params: { amount: string } } }) {
+export default function RiderBids({ route }: { route: { params: { amount: string; parcel_id: number } } }) {
   const navigation = useNavigation<RiderBidsNavigationProp>()
-  const { amount } = route.params
+  const [token, setToken] = useState<string | null>(null)
+  const { amount, parcel_id } = route.params
 
-  const [riders, setRiders] = useState<Rider[]>([
-    {
-      id: "1",
-      name: "Maleek Oladimeji",
-      rating: 5,
-      // image:
-      //   pp,
-      vehicleType: "Bike",
-      vehicleColor: "Black",
-      distance: "3 min away",
-      price: "2,500",
-    },
-    {
-      id: "2",
-      name: "Maleek Oladimeji",
-      rating: 5,
-      // image:
-      //  pp,
-      vehicleType: "Bike",
-      vehicleColor: "Black",
-      distance: "3 min away",
-      price: "2,500",
-    },
-    {
-      id: "3",
-      name: "Maleek Oladimeji",
-      rating: 5,
-      // image:
-      //  pp,
-      vehicleType: "Bike",
-      vehicleColor: "Black",
-      distance: "3 min away",
-      price: "2,500",
-    },
-  ])
+  const [riders, setRiders] = useState<Rider[]>([])
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    const fetchToken = async () => {
+      const fetchedToken = await getFromStorage("authToken")
+      setToken(fetchedToken)
+    }
+    fetchToken()
+  }, [])
+
+  const { data: parcelBidList, isLoading: parcelBidListLoading } = useQuery({
+    queryKey: ["parcelBidList", token, parcel_id],
+    queryFn: () => getParcelBidList(parcel_id, token!),
+    enabled: !!token && !!parcel_id, // <=== make sure both exist
+    refetchInterval: isFocused ? 1000 : false, // ✅ Stop polling when not focused
+  });
+
+  console.log("🪪 Token:", token);
+  console.log("📦 Parcel ID:", parcel_id);
+
+  useEffect(() => {
+    if (parcelBidList?.data?.bids) {
+      const transformed = parcelBidList.data.bids.map((bid: any) => {
+        let imageSource;
+
+        if (bid.rider?.profile_picture) {
+          imageSource = {
+            uri: `https://fastlogistic.hmstech.xyz/storage/${bid.rider.profile_picture}`,
+          };
+        } else {
+          imageSource = pp; // <- make sure 'pp' is a valid `require('./path/to/fallback.png')`
+        }
+
+        return {
+          id: bid.id.toString(),
+          name: bid.rider?.name ?? "Unnamed",
+          rating: 5,
+          vehicleType: "Bike",
+          vehicleColor: "Black",
+          distance: "Nearby",
+          price: `₦ ${Number(bid.bid_amount).toLocaleString()}`,
+          image: imageSource,
+        };
+      });
+
+      setRiders(transformed);
+
+    }
+  }, [parcelBidList])
 
   const handleBookRider = (rider: Rider) => {
     navigation.navigate("RidesSummary", {
@@ -79,85 +100,95 @@ export default function RiderBids({ route }: { route: { params: { amount: string
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView style={styles.content}>
-        <View style={styles.myBidSection}>
-          <Text style={styles.myBidTitle}>My Bid</Text>
-          <View style={styles.myBidAmount}>
-            <Text style={styles.bidAmountText}>N 2,500</Text>
+      {/* Show Loader while data is being fetched */}
+      {parcelBidListLoading ? (
+        <Loader />
+      ) : (
+        <ScrollView style={styles.content}>
+          <View style={styles.myBidSection}>
+            <Text style={styles.myBidTitle}>My Bid</Text>
+            <View style={styles.myBidAmount}>
+              <Text style={styles.bidAmountText}>₦ {amount}</Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.addressSection}>
-          <View style={styles.addressItem}>
-            <View style={styles.addressIconContainer}>
-              <Icon name="ellipse" size={10} color="#00A651" />
+          <View style={styles.addressSection}>
+            <View style={styles.addressItem}>
+              <View style={styles.addressIconContainer}>
+                <Icon name="ellipse" size={10} color="#00A651" />
+              </View>
+              <View>
+                <Text style={styles.addressLabel}>Sender Address</Text>
+                <Text style={styles.addressText}>
+                  {parcelBidList?.data?.parcel?.sender_address ?? "N/A"}
+                </Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.addressLabel}>Sender Address</Text>
-              <Text style={styles.addressText}>No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo</Text>
-            </View>
-          </View>
-          <View style={styles.addressDivider} />
-          <View style={styles.addressItem}>
-            <View style={styles.addressIconContainer}>
-              <Icon name="ellipse" size={10} color="#FF0000" />
-            </View>
-            <View>
-              <Text style={styles.addressLabel}>Receiver Address</Text>
-              <Text style={styles.addressText}>No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo</Text>
-            </View>
-          </View>
-        </View>
 
-        <View style={styles.ridersSection}>
-          {riders.map((rider) => (
-            <View key={rider.id} style={styles.riderCard}>
-              <View style={styles.riderInfo}>
-                <Image
-                  source={pp}
-                  style={styles.riderImage}
-                  defaultSource={{ uri: "/placeholder.svg?height=60&width=60" }}
-                />
-                <View style={styles.riderDetails}>
-                  <Text style={styles.riderName}>{rider.name}</Text>
-                  <View style={styles.ratingContainer}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Icon key={star} name="star" size={16} color="#800080" />
-                    ))}
+            <View style={styles.addressDivider} />
+
+            <View style={styles.addressItem}>
+              <View style={styles.addressIconContainer}>
+                <Icon name="ellipse" size={10} color="#FF0000" />
+              </View>
+              <View>
+                <Text style={styles.addressLabel}>Receiver Address</Text>
+                <Text style={styles.addressText}>
+                  {parcelBidList?.data?.parcel?.receiver_address ?? "N/A"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.ridersSection}>
+            {riders.map((rider) => (
+              <View key={`${rider.id}-${rider.name}-${Math.random()}`} style={styles.riderCard}>
+                <View style={styles.riderInfo}>
+                  <Image
+                    source={rider.image}
+                    style={styles.riderImage}
+                  />
+                  <View style={styles.riderDetails}>
+                    <Text style={styles.riderName}>{rider.name}</Text>
+                    <View style={styles.ratingContainer}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Icon key={star} name="star" size={16} color="#800080" />
+                      ))}
+                    </View>
+                  </View>
+                  <View style={styles.priceTag}>
+                    <Text style={styles.priceText}>{rider.price}</Text>
                   </View>
                 </View>
-                <View style={styles.priceTag}>
-                  <Text style={styles.priceText}>N 2,500</Text>
-                </View>
-              </View>
 
-              <View style={styles.riderVehicleInfo}>
-                <View style={styles.vehicleDetail}>
-                  <Icon name="bicycle-outline" size={20} color="#000000" />
-                  <Text style={styles.vehicleDetailText}>{rider.vehicleType}</Text>
+                <View style={styles.riderVehicleInfo}>
+                  <View style={styles.vehicleDetail}>
+                    <Icon name="bicycle-outline" size={20} color="#000000" />
+                    <Text style={styles.vehicleDetailText}>{rider.vehicleType}</Text>
+                  </View>
+                  <View style={styles.vehicleDetail}>
+                    <Icon name="color-palette-outline" size={20} color="#000000" />
+                    <Text style={styles.vehicleDetailText}>{rider.vehicleColor}</Text>
+                  </View>
+                  <View style={styles.vehicleDetail}>
+                    <Icon name="time-outline" size={20} color="#000000" />
+                    <Text style={styles.vehicleDetailText}>{rider.distance}</Text>
+                  </View>
                 </View>
-                <View style={styles.vehicleDetail}>
-                  <Icon name="color-palette-outline" size={20} color="#000000" />
-                  <Text style={styles.vehicleDetailText}>{rider.vehicleColor}</Text>
-                </View>
-                <View style={styles.vehicleDetail}>
-                  <Icon name="time-outline" size={20} color="#000000" />
-                  <Text style={styles.vehicleDetailText}>{rider.distance}</Text>
-                </View>
-              </View>
 
-              <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.sendBidButton}>
-                  <Text style={styles.sendBidButtonText}>Send Bid</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.bookRiderButton} onPress={() => handleBookRider(rider)}>
-                  <Text style={styles.bookRiderButtonText}>Book Rider</Text>
-                </TouchableOpacity>
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity style={styles.sendBidButton}>
+                    <Text style={styles.sendBidButtonText}>Send Bid</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.bookRiderButton} onPress={() => handleBookRider(rider)}>
+                    <Text style={styles.bookRiderButtonText}>Book Rider</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
+            ))}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   )
 }

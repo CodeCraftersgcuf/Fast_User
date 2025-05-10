@@ -31,6 +31,14 @@ const API_ENDPOINTS = {
     SingleChatInbox: API_DOMAIN + "/chat/messages",
     SendMessage: API_DOMAIN + "/chat/send",
 
+    ParcelBidCreate: API_DOMAIN + "/parcel-bid/create-by-user",
+
+    ParcelBidList: (id: number | string) =>
+      `${API_DOMAIN}/parcel-bid/${id}/list`,
+
+    ParcelCancel: (id: number | string) =>
+      `${API_DOMAIN}/sendparcel/${id}/cancel`,
+
     EditProfile: API_DOMAIN + "/user/update-profile",
 
     DeliveryHistory: API_DOMAIN + "/history/user",
@@ -73,7 +81,7 @@ const API_ENDPOINTS = {
       API_DOMAIN + "/exchange-rate/calculate-exchange-rate",
     GetReferral: API_DOMAIN + "/refferal/get-all",
     SwapTransfter: API_DOMAIN + "/wallet/swap",
-    EditProfile: API_DOMAIN + "/user/update-profile",
+    // EditProfile: API_DOMAIN + "/user/update-profile",
     GetMarketData: API_DOMAIN + "/admin/market-data",
   },
   ACCOUNT_MANAGEMENT: {

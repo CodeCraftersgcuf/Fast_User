@@ -419,7 +419,7 @@
 // // //     justifyContent: "center",
 // // //     alignItems: "center",
 // // //     paddingTop: 440
-  
+
 // // //   },
 // // //   confirmationModal: {
 // // //     width: "100%",
@@ -1500,7 +1500,9 @@ export default function RidesSummary({
 }: { route: { params: { rider: any; amount: string; paymentStatus?: string } } }) {
   const navigation = useNavigation<RideSummaryNavigationProp>()
   const { rider, amount, paymentStatus } = route.params
-  const { deliveryDetails } = useOrder()
+  const { deliveryDetails } = useOrder();
+
+  console.log("Delivery Details: ", rider);
 
   const [isDeliverySummaryExpanded, setIsDeliverySummaryExpanded] = useState(true)
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
@@ -1656,7 +1658,7 @@ export default function RidesSummary({
                 <Text style={styles.detailValue}>
                   {deliveryDetails.payer
                     ? `${deliveryDetails.payer === "sender" ? "Sender" : "Receiver"} - ${deliveryDetails.payer === "sender" ? deliveryDetails.senderName : deliveryDetails.receiverName}`
-                    : "Sender - Qamardeen Malik"}
+                    : "Sender - Qamardeens Malik"}
                 </Text>
               </View>
               <View style={styles.detailRow}>
@@ -1693,9 +1695,8 @@ export default function RidesSummary({
         <View style={styles.riderCard}>
           <View style={styles.riderInfo}>
             <Image
-              source={{ uri: rider.image }}
+              source={rider.image?.uri ? rider.image : rider.image }
               style={styles.riderImage}
-              defaultSource={{ uri: "/placeholder.svg?height=60&width=60" }}
             />
             <View style={styles.riderDetails}>
               <Text style={styles.riderName}>{rider.name}</Text>

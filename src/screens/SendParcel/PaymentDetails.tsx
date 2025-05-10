@@ -22,6 +22,8 @@ import { CreateParcelStep4 } from "../../utils/mutations/accountMutations"
 import { useMutation } from "@tanstack/react-query"
 import Toast from "react-native-toast-message";
 import { getFromStorage } from "../../utils/storage";
+import { parcelBidCreate } from "../../utils/mutations/accountMutations"
+
 
 interface SelectionOption {
   label: string
@@ -30,9 +32,9 @@ interface SelectionOption {
 }
 
 export default function PaymentDetails() {
-    const [token, setToken] = useState<string | null>(null); // State to hold the token
-    const route = useRoute();
-    const { parcelId } = route.params as { parcelId: number }; // 👈 Get parcelId from navigation
+  const [token, setToken] = useState<string | null>(null); // State to hold the token
+  const route = useRoute();
+  const { parcelId } = route.params as { parcelId: number }; // 👈 Get parcelId from navigation
   const navigation = useNavigation<PaymentDetailsNavigationProp>()
   const { deliveryDetails, updateDeliveryDetails } = useOrder()
 
@@ -49,58 +51,58 @@ export default function PaymentDetails() {
   const [isFeeModalVisible, setIsFeeModalVisible] = useState(false)
   const [isReceiverModalVisible, setIsReceiverModalVisible] = useState(false)
 
-  
-    useEffect(() => {
-      const fetchUserData = async () => {
-        const fetchedToken = await getFromStorage("authToken");
-        setToken(fetchedToken);
-        console.log("🔹 Retrieved Token:", fetchedToken);
-      };
-  
-      fetchUserData();
-    }, []);
 
-    const { mutate: submitStep4, isPending: isSubmittingStep4 } = useMutation({
-      mutationFn: (data: any) =>
-        CreateParcelStep4({
-          id: parcelId,
-          data,
-          token: token!,
-        }),
-      onSuccess: (response) => {
-        console.log("✅ Step 4 Response:", response);
-        Toast.show({
-          type: "success",
-          text1: "Payment Info Submitted",
-        });
-    
-        // 👉 Open modals based on payer/payment method logic
-        if (payer === "sender") {
-          if (paymentMethod === "wallet") {
-            setIsDeliveryFeeModalVisible(true);
-          } else if (paymentMethod === "bank_transfer") {
-            setIsFeeModalVisible(true);
-          }
-        } else if (payer === "receiver") {
-          setIsReceiverModalVisible(true);
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const { mutate: submitStep4, isPending: isSubmittingStep4 } = useMutation({
+    mutationFn: (data: any) =>
+      CreateParcelStep4({
+        id: parcelId,
+        data,
+        token: token!,
+      }),
+    onSuccess: (response) => {
+      console.log("✅ Step 4 Response:", response);
+      Toast.show({
+        type: "success",
+        text1: "Payment Info Submitted",
+      });
+
+      // 👉 Open modals based on payer/payment method logic
+      if (payer === "sender") {
+        if (paymentMethod === "wallet") {
+          setIsDeliveryFeeModalVisible(true);
+        } else if (paymentMethod === "bank_transfer") {
+          setIsFeeModalVisible(true);
         }
-      },
-      onError: (error) => {
-        console.error("❌ Step 4 Failed:", error);
-        Toast.show({
-          type: "error",
-          text1: "Submission Failed",
-          text2: "Please check your payment info and try again.",
-        });
-      },
-    });
-    
-    
+      } else if (payer === "receiver") {
+        setIsReceiverModalVisible(true);
+      }
+    },
+    onError: (error) => {
+      console.error("❌ Step 4 Failed:", error);
+      Toast.show({
+        type: "error",
+        text1: "Submission Failed",
+        text2: "Please check your payment info and try again.",
+      });
+    },
+  });
+
+
 
   // Update the handleProceed function to navigate to different paths based on payment method
   const handleProceed = () => {
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
-  
+
     // Save to context
     updateDeliveryDetails({
       payer,
@@ -109,7 +111,7 @@ export default function PaymentDetails() {
       amount: parsedAmount,
       delivery: parsedAmount,
     });
-  
+
     // Just show appropriate modal – mutation will happen after confirm
     if (payer === "sender") {
       if (paymentMethod === "wallet") {
@@ -121,8 +123,8 @@ export default function PaymentDetails() {
       setIsReceiverModalVisible(true);
     }
   };
-  
-  
+
+
 
   // Handle payment method selection
   const handlePaymentMethodSelect = (method: string) => {
@@ -131,7 +133,9 @@ export default function PaymentDetails() {
   }
 
   // Update the handleDeliveryFeeConfirm function to navigate to SearchRiders
+
   const handleDeliveryFeeConfirm = () => {
+    console.log("🚀 Delivery Fee Confirmed:", amount);
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
     const payload = {
       payer: payer as "sender" | "receiver" | "third-party",
@@ -140,18 +144,39 @@ export default function PaymentDetails() {
       amount: parsedAmount,
       delivery_fee: parsedAmount,
     };
-  
+
     submitStep4(payload, {
-      onSuccess: () => {
+      onSuccess: async () => {
         setIsDeliveryFeeModalVisible(false);
-        navigation.navigate("SearchRiders", { amount });
+
+        try {
+          await parcelBidCreate({
+            data: {
+              send_parcel_id: parcelId,
+              bid_amount: parsedAmount,
+            },
+            token: token!,
+          });
+
+          const navigationParams = {
+            amount: amount,
+            send_parcel_id: parcelId.toString(),
+          };
+
+          console.log("🚀 Navigating to SearchRiders with:", navigationParams);
+
+          navigation.navigate("SearchRiders", navigationParams);
+        } catch (error) {
+          console.error("❌ Parcel bid creation failed:", error);
+        }
       },
     });
   };
-  
+
 
   // Update the handleFeeConfirm function to navigate to SearchRider (not SearchRiders)
   const handleFeeConfirm = () => {
+    console.log("🚀 Delivery Fee Confirmed:", amount);
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
     const payload = {
       payer: payer as "sender" | "receiver" | "third-party",
@@ -160,18 +185,39 @@ export default function PaymentDetails() {
       amount: parsedAmount,
       delivery_fee: parsedAmount,
     };
-  
+
     submitStep4(payload, {
-      onSuccess: () => {
-        setIsFeeModalVisible(false);
-        navigation.navigate("SearchRider", { amount });
+      onSuccess: async () => {
+        setIsDeliveryFeeModalVisible(false);
+
+        try {
+          await parcelBidCreate({
+            data: {
+              send_parcel_id: parcelId,
+              bid_amount: parsedAmount,
+            },
+            token: token!,
+          });
+
+          const navigationParams = {
+            amount: amount,
+            send_parcel_id: parcelId.toString(),
+          };
+
+          console.log("🚀 Navigating to SearchRiders with:", navigationParams);
+
+          navigation.navigate("SearchRiders", navigationParams);
+        } catch (error) {
+          console.error("❌ Parcel bid creation failed:", error);
+        }
       },
     });
   };
-  
+
 
   // Update the handleReceiverConfirm function to navigate to SearchRider
   const handleReceiverConfirm = () => {
+    console.log("🚀 Delivery Fee Confirmed:", amount);
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
     const payload = {
       payer: payer as "sender" | "receiver" | "third-party",
@@ -180,15 +226,35 @@ export default function PaymentDetails() {
       amount: parsedAmount,
       delivery_fee: parsedAmount,
     };
-  
+
     submitStep4(payload, {
-      onSuccess: () => {
-        setIsReceiverModalVisible(false);
-        navigation.navigate("SearchRider", { amount });
+      onSuccess: async () => {
+        setIsDeliveryFeeModalVisible(false);
+
+        try {
+          await parcelBidCreate({
+            data: {
+              send_parcel_id: parcelId,
+              bid_amount: parsedAmount,
+            },
+            token: token!,
+          });
+
+          const navigationParams = {
+            amount: amount,
+            send_parcel_id: parcelId.toString(),
+          };
+
+          console.log("🚀 Navigating to SearchRiders with:", navigationParams);
+
+          navigation.navigate("SearchRiders", navigationParams);
+        } catch (error) {
+          console.error("❌ Parcel bid creation failed:", error);
+        }
       },
     });
   };
-  
+
 
   // Handle amount change
   const handleAmountChange = (value: string) => {
@@ -488,6 +554,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+    paddingTop: 25,
   },
   scrollView: {
     flex: 1,

@@ -24,6 +24,20 @@ export const sendMessage = async ({
   );
 }
 
+export const parcelBidCreate = async ({
+  data,
+  token,
+}: {
+  data: {
+    send_parcel_id: number;
+    bid_amount: number;
+  };
+  token: string;
+}) => {
+  console.log("📦 Creating Parcel Bid with:", data);
+  return await apiCall(API_ENDPOINTS.USER.ParcelBidCreate, "POST", data, token);
+};
+
 export const createAddress = async ({
   data,
   token,
