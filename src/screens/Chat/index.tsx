@@ -29,7 +29,7 @@ interface ChatItem {
 import { useQuery } from "@tanstack/react-query"
 import { getChatInbox } from "../../utils/queries/accountQueries";
 import { getFromStorage } from "../../utils/storage";
-
+import Loader from "../../components/Loader";
 
 
 
@@ -53,7 +53,7 @@ export default function ChatScreen() {
     enabled: !!token, // Only run the query if token is available
   });
   console.log("🔹 Chat Data:", chatData);
-  
+
   const chats: ChatItem[] = [
     {
       id: "1",
@@ -92,7 +92,7 @@ export default function ChatScreen() {
       </View>
     </TouchableOpacity>
   );
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -103,16 +103,23 @@ export default function ChatScreen() {
         <View style={styles.headerRight} />
       </View>
 
-      <FlatList
-      data={chatData?.data || []}
-
-        renderItem={renderChatItem}
-        keyExtractor={(item) => item.id.toString()}
-
-        contentContainerStyle={styles.chatList}
-      />
+      {chatLoading ? (
+        <Loader />
+      ) : chatData?.data?.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ fontSize: 16, color: "#888" }}>No one available to chat.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={chatData?.data || []}
+          renderItem={renderChatItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.chatList}
+        />
+      )}
     </SafeAreaView>
   );
+
 }
 
 const styles = StyleSheet.create({
