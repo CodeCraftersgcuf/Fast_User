@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   Text,
   Dimensions,
   Platform,
+  Alert,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -14,59 +15,87 @@ import { theme } from "../../constants/theme";
 import MapView, { Marker } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import { useOrder } from "../../contexts/OrderContext";
+import * as Location from "expo-location";
 
 const { width, height } = Dimensions.get("window");
 
 export default function MapSelect() {
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasNoResults, setHasNoResults] = useState(false);
-
   const navigation = useNavigation();
   const route = useRoute();
   const { updateDeliveryDetails } = useOrder();
-  const [selectedLocation, setSelectedLocation] = useState({
-    latitude: 40.7128,
-    longitude: -74.006,
-    addressText: "",
-  });
 
   const mapRef = useRef<MapView>(null);
+  const googlePlacesRef = useRef<any>(null);
 
-  const handleClose = () => {
-    navigation.goBack();
-  };
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasNoResults, setHasNoResults] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    addressText: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchLocation = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Location Denied", "Location access is required.", [
+          { text: "OK", onPress: () => navigation.goBack() },
+        ]);
+        return;
+      }
+
+      try {
+        const loc = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = loc.coords;
+
+        const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
+        const addressText = `${place.name || ""}, ${place.street || ""}, ${place.city || ""}, ${place.region || ""}, ${place.country || ""}`.trim();
+
+        const finalLocation = { latitude, longitude, addressText };
+        setSelectedLocation(finalLocation);
+
+        if (mapRef.current) {
+          mapRef.current.animateToRegion(
+            {
+              ...finalLocation,
+              latitudeDelta: 0.005,
+              longitudeDelta: 0.005,
+            },
+            1000
+          );
+        }
+
+        if (googlePlacesRef.current) {
+          googlePlacesRef.current.setAddressText(addressText);
+        }
+      } catch (err) {
+        console.warn("Error fetching current location", err);
+      }
+    };
+
+    fetchLocation();
+  }, []);
 
   const handleSelect = () => {
-    const address =
-      selectedLocation.addressText ||
-      `${selectedLocation.latitude.toFixed(6)}, ${selectedLocation.longitude.toFixed(6)}`;
-  
-    const type = route.params?.type || "sender"; // could be sender / receiver / address
-    const from = route.params?.from || "LocationSelect"; // default fallback
-  
+    if (!selectedLocation) return;
+    const address = selectedLocation.addressText || `${selectedLocation.latitude}, ${selectedLocation.longitude}`;
+
+    const type = route.params?.type || "sender";
+    const from = route.params?.from || "LocationSelect";
+
     updateDeliveryDetails({
       [type === "sender" ? "senderAddress" : "receiverAddress"]: address,
     });
-  
-    // New Correct Condition using `replace`
-    if (from === "Address") {
-      navigation.replace("Address", { // ✅ REPLACE, not navigate
-        selectedAddress: address,
-        type,
-        fromMap: true,
-      });
-    } else {
-      navigation.replace("LocationSelect", { // ✅ REPLACE, not navigate
-        selectedAddress: address,
-        type,
-        fromMap: true,
-      });
-    }
+
+    navigation.replace(from, {
+      selectedAddress: address,
+      type,
+      fromMap: true,
+    });
   };
-  
-  
 
-
+  const handleClose = () => navigation.goBack();
 
   return (
     <View style={styles.container}>
@@ -81,6 +110,7 @@ export default function MapSelect() {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <GooglePlacesAutocomplete
+          ref={googlePlacesRef}
           placeholder="Search"
           fetchDetails={true}
           onPress={(data, details = null) => {
@@ -93,19 +123,17 @@ export default function MapSelect() {
                   location: { lat, lng },
                 },
               } = details;
+
               const newLocation = {
                 latitude: lat,
                 longitude: lng,
                 addressText: details?.formatted_address || data.description,
               };
               setSelectedLocation(newLocation);
+
               if (mapRef.current) {
                 mapRef.current.animateToRegion(
-                  {
-                    ...newLocation,
-                    latitudeDelta: 0.005,
-                    longitudeDelta: 0.005,
-                  },
+                  { ...newLocation, latitudeDelta: 0.005, longitudeDelta: 0.005 },
                   1000
                 );
               }
@@ -115,8 +143,7 @@ export default function MapSelect() {
             key: "AIzaSyBqgIQFEH1phOSeeH9cgJk_DxC-cixb87I",
             language: "en",
           }}
-          onFail={(error) => {
-            console.warn("Search error:", error);
+          onFail={() => {
             setIsSearching(false);
             setHasNoResults(true);
           }}
@@ -140,30 +167,70 @@ export default function MapSelect() {
             <Text style={styles.loadingText}>Searching...</Text>
           </View>
         )}
-
         {hasNoResults && (
           <View style={styles.noResultBox}>
             <Text style={styles.noResultText}>No results found.</Text>
           </View>
         )}
-
       </View>
 
+      {/* Map */}
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
           style={styles.map}
           initialRegion={{
-            latitude: selectedLocation.latitude,
-            longitude: selectedLocation.longitude,
+            latitude: selectedLocation?.latitude || 0,
+            longitude: selectedLocation?.longitude || 0,
             latitudeDelta: 0.0922,
             longitudeDelta: 0.0421,
           }}
-          onPress={(e) => {
-            setSelectedLocation(e.nativeEvent.coordinate);
+          onPress={async (e) => {
+            const { latitude, longitude } = e.nativeEvent.coordinate;
+
+            let { status } = await Location.getForegroundPermissionsAsync();
+            if (status !== "granted") {
+              const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+              if (newStatus !== "granted") {
+                Alert.alert("Permission Denied", "Location access is required.");
+                return;
+              }
+            }
+
+            // Update marker immediately
+            const fallback = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            const instantLocation = { latitude, longitude, addressText: fallback };
+            setSelectedLocation(instantLocation);
+
+            try {
+              const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
+              const addressText = `${place.name || ""}, ${place.street || ""}, ${place.city || ""}, ${place.region || ""}, ${place.country || ""}`.trim();
+              const finalLocation = { latitude, longitude, addressText };
+
+              setSelectedLocation(finalLocation); // Update with real address
+              googlePlacesRef.current?.setAddressText(addressText);
+            } catch (error) {
+              googlePlacesRef.current?.setAddressText(fallback);
+            }
+
+            // Ensure map re-focuses
+            setTimeout(() => {
+              mapRef.current?.animateToRegion(
+                {
+                  latitude,
+                  longitude,
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                },
+                500
+              );
+            }, 100);
           }}
+
         >
-          <Marker coordinate={selectedLocation} pinColor={colors.primary} />
+          {selectedLocation && (
+            <Marker coordinate={selectedLocation} pinColor={colors.primary} />
+          )}
         </MapView>
       </View>
 
@@ -173,6 +240,7 @@ export default function MapSelect() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -255,7 +323,7 @@ const styles = StyleSheet.create({
   loadingBox: {
     marginTop: 8,
     padding: 8,
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.lightgrey,
     borderRadius: 5,
     alignItems: "center",
   },

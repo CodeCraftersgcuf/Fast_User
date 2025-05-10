@@ -91,7 +91,11 @@ const DeliveryHistory = () => {
     toAddress: item.receiver_address,
     orderTime: new Date(item.ordered_at || item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     deliveryTime: item.delivery_fee + " fee", // or customize
-    rider: dummyRider, // Use dummy rider
+    rider: {
+      name: item.accepted_bid?.rider?.name || "Unknown",
+      avatar: { uri: `https://fastlogistic.hmstech.xyz/storage/${item.accepted_bid?.rider?.profile_picture}` },
+      rating: 5, // replace with actual rating if available
+    },
   })) || [];
 
   const deliveredData: DeliveryItem[] = historyData?.data?.delivered?.map((item: any) => ({
@@ -101,7 +105,11 @@ const DeliveryHistory = () => {
     toAddress: item.receiver_address,
     orderTime: new Date(item.ordered_at || item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     deliveryTime: new Date(item.delivered_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    rider: dummyRider,
+    rider: {
+      name: item.accepted_bid?.rider?.name || "Unknown",
+      avatar: { uri: `https://fastlogistic.hmstech.xyz/storage/${item.accepted_bid?.rider?.profile_picture}` },
+      rating: 5, // or item.accepted_bid?.rider?.rating if available
+    },
   })) || [];
 
   const renderTabContent = () => {
