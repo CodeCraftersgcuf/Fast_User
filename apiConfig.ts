@@ -22,19 +22,20 @@ const API_ENDPOINTS = {
   },
 
   USER: {
-    CreateAddress: API_DOMAIN + '/address/create',
-    ListAddress: API_DOMAIN + '/address/list',
-    UpdateAddress: API_DOMAIN + '/address/update',
-    DeleteAddress: API_DOMAIN + '/address/delete',
+    CreateAddress: API_DOMAIN + "/address/create",
+    ListAddress: API_DOMAIN + "/address/list",
+    UpdateAddress: API_DOMAIN + "/address/update",
+    DeleteAddress: API_DOMAIN + "/address/delete",
 
-    
     ChatInbox: API_DOMAIN + "/chat/connected-riders",
     SingleChatInbox: API_DOMAIN + "/chat/messages",
     SendMessage: API_DOMAIN + "/chat/send",
 
     EditProfile: API_DOMAIN + "/user/update-profile",
 
-    GetFaqs: API_DOMAIN + '/faqs/user',
+    DeliveryHistory: API_DOMAIN + "/history/user",
+
+    GetFaqs: API_DOMAIN + "/faqs/user",
 
     SetPin: API_DOMAIN + "/user/set-pin",
     VerifyPin: API_DOMAIN + "/user/verify-pin",

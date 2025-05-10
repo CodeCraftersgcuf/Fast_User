@@ -1,8 +1,5 @@
 
-
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import Icon from "react-native-vector-icons/Ionicons"
@@ -16,29 +13,128 @@ import DeliveredDeliveries from "./Delivered"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { DeliveriesStackParamList } from "../../types/navigation"
 
+
+//Code Related to the Integration
+import { useQuery } from "@tanstack/react-query"
+import { getFromStorage } from "../../utils/storage"
+import { getUserDeiliveryHistory } from "../../utils/queries/accountQueries"
+import Loader from "../../components/Loader"
+
 type DeliveryHistoryNavigationProp = NativeStackNavigationProp<DeliveriesStackParamList, "DeliveryMain">
+
+
+// Define the delivery item type
+interface DeliveryItem {
+  id: string;
+  status: "Scheduled" | "In transit" | "Picked up" | "Delivered";
+  fromAddress: string;
+  toAddress: string;
+  orderTime: string;
+  deliveryTime: string;
+
+  // Optional fields for scheduled deliveries
+  scheduledDate?: string;
+  scheduledTime?: string;
+
+  // Optional fields for active deliveries
+  rider?: {
+    name: string;
+    avatar: any;
+    rating: number;
+  };
+}
+
 
 const DeliveryHistory = () => {
   const navigation = useNavigation<DeliveryHistoryNavigationProp>()
+  const [token, setToken] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<"Scheduled" | "Active" | "Delivered">("Delivered")
 
   const handleBack = () => {
     navigation.goBack()
   }
+  useEffect(() => {
+    const fetchToken = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+    fetchToken();
+  }, []);
+
+  const { data: historyData, isLoading } = useQuery({
+    queryKey: ["userDeliveryHistory", token],
+    queryFn: () => getUserDeiliveryHistory(token!),
+    enabled: !!token,
+  });
+  const dummyRider = {
+    name: "Qamardeen Malik",
+    avatar: require("../../assets/images/pp.png"),
+    rating: 5,
+  };
+  const scheduledData: DeliveryItem[] = historyData?.data?.scheduled?.map((item: any) => ({
+    id: item.id.toString(),
+    status: "Scheduled",
+    fromAddress: item.sender_address,
+    toAddress: item.receiver_address,
+    orderTime: new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    deliveryTime: "Scheduled",
+    scheduledDate: item.scheduled_date,
+    scheduledTime: item.scheduled_time,
+  })) || [];
+
+  const activeData: DeliveryItem[] = historyData?.data?.active?.map((item: any) => ({
+    id: item.id.toString(),
+    status: item.status === "ordered" ? "Order" : item.status,
+    fromAddress: item.sender_address,
+    toAddress: item.receiver_address,
+    orderTime: new Date(item.ordered_at || item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    deliveryTime: item.delivery_fee + " fee", // or customize
+    rider: dummyRider, // Use dummy rider
+  })) || [];
+
+  const deliveredData: DeliveryItem[] = historyData?.data?.delivered?.map((item: any) => ({
+    id: item.id.toString(),
+    status: "Delivered",
+    fromAddress: item.sender_address,
+    toAddress: item.receiver_address,
+    orderTime: new Date(item.ordered_at || item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    deliveryTime: new Date(item.delivered_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    rider: dummyRider,
+  })) || [];
 
   const renderTabContent = () => {
+    if (isLoading) {
+      return <Loader />;
+    }
+
+    const renderEmpty = (message: string) => (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>{message}</Text>
+      </View>
+    );
+
     switch (activeTab) {
       case "Scheduled":
-        return <ScheduledDeliveries />
+        return scheduledData.length > 0
+          ? <ScheduledDeliveries deliveries={scheduledData} />
+          : renderEmpty("No scheduled deliveries found.");
+
       case "Active":
-        return <ActiveDeliveries />
+        return activeData.length > 0
+          ? <ActiveDeliveries deliveries={activeData} />
+          : renderEmpty("No active deliveries found.");
+
       case "Delivered":
-        return <DeliveredDeliveries />
+        return deliveredData.length > 0
+          ? <DeliveredDeliveries deliveries={deliveredData} />
+          : renderEmpty("No delivered orders found.");
+
       default:
-        return <DeliveredDeliveries />
+        return renderEmpty("No deliveries found.");
     }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -85,6 +181,17 @@ const styles = StyleSheet.create({
     marginBottom: 90,
     zIndex: 999
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",

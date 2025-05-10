@@ -9,7 +9,7 @@ import {
   Image,
   ImageStyle,
   Platform,
- 
+
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -19,6 +19,11 @@ import { colors } from "../../../constants/colors";
 import { theme } from "../../../constants/theme";
 import { useNavigation } from "@react-navigation/native";
 import imageSource from '../../../assets/images/pp.png';
+
+
+import { useRoute } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
+
 
 interface TimelineItem {
   date: string;
@@ -31,8 +36,9 @@ interface TimelineItem {
 export default function DeliveryDetails() {
 
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<any, "DeliveryDetails">>();
+  const { delivery } = route.params;
 
-  
   const timelineData: TimelineItem[] = [
     {
       date: "Feb 23",
@@ -75,9 +81,15 @@ export default function DeliveryDetails() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.navigate("RideDetailsMap")}
+        >
+          <Icon name={icons.back} size={24} color={colors.text.primary} />
+        </TouchableOpacity> */}
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => navigation.goBack()}
         >
           <Icon name={icons.back} size={24} color={colors.text.primary} />
         </TouchableOpacity>
@@ -126,12 +138,11 @@ export default function DeliveryDetails() {
           <View style={styles.profileCard}>
             <View style={styles.profileHeader}>
               <View style={styles.profileInfo}>
-                <Image
-                 source={imageSource}
-                  style={styles.profileImage}
-                />
+                <Image source={{ uri: delivery.rider.avatar }} style={styles.profileImage} />
+
                 <View style={styles.nameRating}>
-                  <Text style={styles.riderName}>Afeez Wale</Text>
+                  <Text style={styles.riderName}>{delivery.rider.name}</Text>
+
                   <View style={styles.ratingContainer}>
                     {[1, 2, 3, 4].map((star) => (
                       <Image
@@ -243,7 +254,7 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  headerButton:{
+  headerButton: {
     padding: 11,
     borderRadius: theme.borderRadius.round,
     backgroundColor: "#EBEBEB",

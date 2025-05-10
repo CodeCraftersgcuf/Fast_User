@@ -8,46 +8,26 @@ import { colors } from "../../constants/colors"
 
 // Define the delivery item type
 interface DeliveryItem {
-  id: string
-  status: "Scheduled"
-  fromAddress: string
-  toAddress: string
-  orderTime: string
-  deliveryTime: string
-  scheduledDate: string
-  scheduledTime: string
+  id: string;
+  status: "Scheduled";
+  fromAddress: string;
+  toAddress: string;
+  orderTime: string;
+  deliveryTime: string;
+  scheduledDate: string;
+  scheduledTime: string;
 }
 
-const ScheduledDeliveries = () => {
-  const navigation = useNavigation()
+interface ScheduledDeliveriesProps {
+  deliveries: DeliveryItem[];
+}
 
-  // Sample data
-  const deliveries: DeliveryItem[] = [
-    {
-      id: "ORD-12ESCJK3K",
-      status: "Scheduled",
-      fromAddress: "No 1, abcd street...",
-      toAddress: "No 1, abcd street....",
-      orderTime: "11:24 AM",
-      deliveryTime: "Scheduled",
-      scheduledDate: "23rd Feb,2025",
-      scheduledTime: "11:24 AM",
-    },
-    {
-      id: "ORD-12ESCJK3K",
-      status: "Scheduled",
-      fromAddress: "No 1, abcd street...",
-      toAddress: "No 1, abcd street....",
-      orderTime: "11:24 AM",
-      deliveryTime: "Scheduled",
-      scheduledDate: "23rd Feb,2025",
-      scheduledTime: "11:24 AM",
-    },
-  ]
+const ScheduledDeliveries = ({ deliveries }: ScheduledDeliveriesProps) => {
+  const navigation = useNavigation();
 
   const handleDeliveryPress = (delivery: DeliveryItem) => {
-    navigation.navigate("DeliveryDetails", { deliveryId: delivery.id })
-  }
+    navigation.navigate("DeliveryDetails", { deliveryId: delivery.id });
+  };
 
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (
     <TouchableOpacity style={styles.deliveryCard} onPress={() => handleDeliveryPress(item)}>
@@ -100,6 +80,7 @@ const ScheduledDeliveries = () => {
     </TouchableOpacity>
   )
 
+
   return (
     <FlatList
       data={deliveries}
@@ -108,8 +89,9 @@ const ScheduledDeliveries = () => {
       contentContainerStyle={styles.listContainer}
       showsVerticalScrollIndicator={false}
     />
-  )
-}
+  );
+};
+
 
 const styles = StyleSheet.create({
   listContainer: {

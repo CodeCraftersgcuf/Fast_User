@@ -11,6 +11,15 @@ export const getParcelList = async (token: string): Promise<any> => {
   );
 };
 
+export const getUserDeiliveryHistory = async (token: string): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.DeliveryHistory,
+    "GET",
+    undefined,
+    token
+  );
+};
+
 export const getAddressList = async (token: string): Promise<any> => {
   return await apiCall(API_ENDPOINTS.USER.ListAddress, "GET", undefined, token);
 };

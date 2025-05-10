@@ -6,59 +6,36 @@ import { useNavigation } from "@react-navigation/native"
 import Icon from "react-native-vector-icons/Ionicons"
 import { colors } from "../../constants/colors"
 
-// Define the delivery item type
 interface DeliveryItem {
-  id: string
-  status: "In transit" | "Picked up" | "Order"
-  fromAddress: string
-  toAddress: string
-  orderTime: string
-  deliveryTime: string
+  id: string;
+  status: "In transit" | "Picked up" | "Order";
+  fromAddress: string;
+  toAddress: string;
+  orderTime: string;
+  deliveryTime: string;
   rider: {
-    name: string
-    avatar: any
-    rating: number
-  }
+    name: string;
+    avatar: any;
+    rating: number;
+  };
 }
 
-const ActiveDeliveries = () => {
-  const navigation = useNavigation()
+interface ActiveDeliveriesProps {
+  deliveries: DeliveryItem[];
+}
 
-  // Sample data
-  const deliveries: DeliveryItem[] = [
-    {
-      id: "ORD-12ESCJK3K",
-      status: "In transit",
-      fromAddress: "No 1, abcd street...",
-      toAddress: "No 1, abcd street, saki....",
-      orderTime: "11:24 AM",
-      deliveryTime: "01:22 PM",
-      rider: {
-        name: "Maleek Oladimeji",
-        avatar: require("../../assets/images/pp.png"),
-        rating: 5,
-      },
-    },
-    {
-      id: "ORD-21JWD23JFEKNK2WNRK",
-      status: "Picked up",
-      fromAddress: "No 1, abcd street...",
-      toAddress: "No 1, abcd street, saki....",
-      orderTime: "11:24 AM",
-      deliveryTime: "01:22 PM",
-      rider: {
-        name: "Afeez Wale",
-        avatar: require("../../assets/images/pp.png"),
-        rating: 4,
-      },
-    },
-  ]
+const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
+  const navigation = useNavigation();
+
+  // const handleDeliveryPress = (delivery: DeliveryItem) => {
+  //   // Navigate to RideDetailsMap screen with the delivery ID
+  //   navigation.navigate("RideDetailsMap", { deliveryId: delivery.id })
+  // }
 
   const handleDeliveryPress = (delivery: DeliveryItem) => {
-    // Navigate to RideDetailsMap screen with the delivery ID
-    navigation.navigate("RideDetailsMap", { deliveryId: delivery.id })
-  }
+    navigation.navigate("DeliveryDetails", { delivery })
 
+  }
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (
     <TouchableOpacity style={styles.deliveryCard} onPress={() => handleDeliveryPress(item)}>
       <View style={styles.deliveryHeader}>
