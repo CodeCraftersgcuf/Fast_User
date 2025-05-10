@@ -33,7 +33,8 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
   // }
 
   const handleDeliveryPress = (delivery: DeliveryItem) => {
-    navigation.navigate("DeliveryDetails", { delivery })
+    console.log("Delivery ID:", delivery.id);
+    navigation.navigate("DeliveryDetails", { delivery: delivery })
 
   }
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (

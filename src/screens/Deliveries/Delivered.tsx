@@ -30,7 +30,7 @@ const DeliveredDeliveries = ({ deliveries }: DeliveredDeliveriesProps) => {
 
   const handleDeliveryPress = (delivery: DeliveryItem) => {
     // Navigate to DeliveryDetails screen with the delivery ID
-  navigation.navigate("DeliveryDetails", { delivery })
+    navigation.navigate("DeliveryDetails", { delivery: delivery })
 
   }
 

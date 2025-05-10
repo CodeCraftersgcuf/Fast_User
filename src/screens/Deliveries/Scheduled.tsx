@@ -26,7 +26,7 @@ const ScheduledDeliveries = ({ deliveries }: ScheduledDeliveriesProps) => {
   const navigation = useNavigation();
 
   const handleDeliveryPress = (delivery: DeliveryItem) => {
-    navigation.navigate("DeliveryDetails", { deliveryId: delivery.id });
+    navigation.navigate("DeliveryDetails", { delivery: delivery })
   };
 
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (

@@ -32,13 +32,45 @@ interface TimelineItem {
   location: string;
   isCompleted: boolean;
 }
+interface DeliveryItem {
+  id: string;
+  status: "Delivered" | "In transit" | "Picked up" | "Order";
+  fromAddress: string;
+  toAddress: string;
+  orderTime: string;
+  deliveryTime: string;
+  rider: {
+    name: string;
+    avatar: any;
+    rating: number;
+  };
+}
+
+type DeliveryDetailsRouteProp = RouteProp<
+  {
+    DeliveryDetails: {
+      delivery: DeliveryItem;
+    };
+  },
+  "DeliveryDetails"
+>;
 
 export default function DeliveryDetails() {
 
   const navigation = useNavigation();
-  const route = useRoute<RouteProp<any, "DeliveryDetails">>();
-  const { delivery } = route.params;
+  const route = useRoute<DeliveryDetailsRouteProp>();
 
+  const { delivery } = route.params;
+  console.log("Delivery Details:", delivery);
+  if (!delivery) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 50, fontSize: 16 }}>
+          Delivery data not available.
+        </Text>
+      </SafeAreaView>
+    );
+  }
   const timelineData: TimelineItem[] = [
     {
       date: "Feb 23",
@@ -138,32 +170,43 @@ export default function DeliveryDetails() {
           <View style={styles.profileCard}>
             <View style={styles.profileHeader}>
               <View style={styles.profileInfo}>
-                <Image source={{ uri: delivery.rider.avatar }} style={styles.profileImage} />
+                <Image
+                  source={
+                    delivery?.rider?.avatar
+                      ? typeof delivery.rider.avatar === "string"
+                        ? { uri: delivery.rider.avatar }
+                        : delivery.rider.avatar
+                      : imageSource // fallback image
+                  }
+                  style={styles.profileImage}
+                />
 
                 <View style={styles.nameRating}>
-                  <Text style={styles.riderName}>{delivery.rider.name}</Text>
+                  <Text style={styles.riderName}>
+                    {delivery?.rider?.name || "Rider Name"}
+                  </Text>
 
                   <View style={styles.ratingContainer}>
-                    {[1, 2, 3, 4].map((star) => (
+                    {[1, 2, 3, 4, 5].map((star) => (
                       <Image
                         key={star}
-                        source={icons.star}
+                        source={
+                          star <= (delivery?.rider?.rating || 0)
+                            ? icons.star
+                            : icons.starOutline
+                        }
                         style={[
                           styles.iconTiny as ImageStyle,
-                          styles.starFilled,
+                          star <= (delivery?.rider?.rating || 0)
+                            ? styles.starFilled
+                            : styles.starOutline,
                         ]}
                       />
                     ))}
-                    <Image
-                      source={icons.starOutline}
-                      style={[
-                        styles.iconTiny as ImageStyle,
-                        styles.starOutline,
-                      ]}
-                    />
                   </View>
                 </View>
               </View>
+
               <View style={styles.actionButtons}>
                 <TouchableOpacity style={styles.iconButton}>
                   <Image
@@ -180,6 +223,7 @@ export default function DeliveryDetails() {
               </View>
             </View>
           </View>
+          
 
           <View style={styles.orderDetails}>
             <View style={styles.orderHeader}>
