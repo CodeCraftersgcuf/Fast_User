@@ -29,7 +29,7 @@ type UserScreenNavigationProp = NativeStackNavigationProp<
 //Code Related to the Integration
 import { useQuery } from "@tanstack/react-query";
 import { getFromStorage } from "../../utils/storage";
-import { getBalance } from "../../utils/queries/accountQueries";
+import { getActiveParcel, getBalance } from "../../utils/queries/accountQueries";
 
 
 
@@ -49,6 +49,7 @@ export default function User() {
       const fetchedUser = await getFromStorage("user");
 
       setUserData(fetchedUser);
+      setToken(fetchedToken);
 
       console.log("🔹 Retrieved Token:", fetchedToken);
       console.log("👤 Retrieved User:", fetchedUser);
@@ -66,7 +67,15 @@ export default function User() {
     enabled: !!token, // Only run the query if token is available
   });
 
-
+  const {
+    data: parceldata,
+    isLoading: isParcelLoading
+  } = useQuery({
+    queryKey: ['activeParcel', token],
+    queryFn: () => getActiveParcel(token!),
+    enabled: !!token, // Only run the query if token is available
+  });
+  console.log(parceldata?.data, " active parcel");
   const promotions = [
     {
       id: "1",
@@ -125,10 +134,10 @@ export default function User() {
   };
 
 
-  const handleDeliveryPress = (orderId: string) => {
-    console.log(`Delivery ${orderId} pressed`);
-    navigation.navigate("UserDetails");
+  const handleDeliveryPress = (parcel: any) => {
+    navigation.navigate("UserDetails", { parcel }); // 👈 pass the full parcel object
   };
+
 
   const handleTopUp = () => {
     console.log("Top up pressed");
@@ -142,6 +151,18 @@ export default function User() {
     navigation.navigate("Wallet", { modalType: "withdraw" });
 
     // Navigate to withdraw screen
+  };
+  const formatStatus = (status: string): "Ordered" | "Picked up" | "In Transit" | "Delivered" => {
+    switch (status) {
+      case "ordered":
+        return "Picked up"; // or "Ordered" based on your UX
+      case "in_transit":
+        return "In Transit";
+      case "delivered":
+        return "Delivered";
+      default:
+        return "Ordered";
+    }
   };
 
   return (
@@ -191,7 +212,7 @@ export default function User() {
                 style={styles.balanceButton}
                 onPress={handleTopUp}
               >
-                <Icon name="arrow-up" size={16} color={colors.text.primary} />
+                <Icon name="arrow-up" size={16} color={colors.text.primary} style={{ transform: [{ rotate: '-45deg' }] }} />
                 <Text style={styles.balanceButtonText}>Top Up</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -284,23 +305,24 @@ export default function User() {
             </View>
 
           </View>
-
+          {/* {new Date(parceldata.data.ordered_at)} */}
           {/* Active Deliveries */}
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Active Deliveries</Text>
-            <DeliveryCard
-              orderId="ORD-12ESCJK3K"
-              status="In Transit"
-              fromAddress="No 1, abcd street..."
-              toAddress="No 1, abcd street..."
-              orderTime={new Date("2023-02-23T11:24:00")}
-              estimatedDelivery={new Date("2023-02-23T13:22:00")}
-              riderName="Maleek Oladimeji"
-              riderRating={5}
-              onPress={() => handleDeliveryPress("ORD-12ESCJK3K")}
-              onChatPress={() => console.log("Chat with rider")}
-              onCallPress={() => console.log("Call rider")}
-            />
+            {parceldata?.data && (
+              <DeliveryCard
+                orderId={`ORD-${parceldata.data.id}`}
+                status={formatStatus(parceldata.data.status)} // function explained below
+                fromAddress={parceldata.data.sender_address}
+                toAddress={parceldata.data.receiver_address}
+                orderTime={new Date(`${parceldata.data.scheduled_date}T${parceldata.data.scheduled_time}`)}
+                estimatedDelivery={new Date(parceldata.data.ordered_at)}
+                riderName={parceldata.data.rider?.name ?? "Not Assigned"}
+                riderRating={parceldata.data.rider?.rating ?? 5}
+                onPress={() => handleDeliveryPress(parceldata.data)} onChatPress={() => console.log("Chat with rider")}
+                onCallPress={() => console.log("Call rider")}
+              />
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -365,17 +387,21 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     gap: theme.spacing.lg,
+    alignItems: 'center',
+
     justifyContent: 'space-between',
   },
   balanceAmount: {
-    fontSize: 35,
+    fontSize: 30,
     fontWeight: "900",
-    color: colors.white,
+    color: '#FFFFFFE5',
     marginBottom: theme.spacing.md,
   },
   balanceActions: {
     flexDirection: "row",
     gap: theme.spacing.sm,
+    alignItems: "flex-end",
+    marginTop: -10
   },
   balanceButton: {
     flexDirection: "row",
@@ -386,11 +412,11 @@ const styles = StyleSheet.create({
     paddingVertical: -1,
     paddingHorizontal: 6,
     gap: 1,
-    width: 80,
-    height: 35,
+    width: 75,
+    height: 30,
   },
   balanceButtonText: {
-    fontSize: theme.fontSizes.xs,
+    fontSize: 11,
     fontWeight: "600",
     color: colors.text.primary,
   },

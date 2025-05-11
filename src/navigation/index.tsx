@@ -384,7 +384,7 @@ function TabNavigator() {
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="/" component={Onboard} />
+      <Stack.Screen name="/" component={Login} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="SignUp" component={SignUp} />
       <Stack.Screen name="Verify" component={Verify} />

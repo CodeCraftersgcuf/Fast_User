@@ -5,18 +5,22 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from "react
 import { useNavigation } from "@react-navigation/native"
 import Icon from "react-native-vector-icons/Ionicons"
 import { colors } from "../../constants/colors"
+import { useState } from "react";
 
 interface DeliveryItem {
   id: string;
   status: "In transit" | "Picked up" | "Order";
   fromAddress: string;
+  userId: string;
   toAddress: string;
   orderTime: string;
   deliveryTime: string;
   rider: {
+    id: string;
     name: string;
     avatar: any;
     rating: number;
+    phone: string
   };
 }
 
@@ -29,12 +33,21 @@ import { useQuery } from "@tanstack/react-query"
 import { getParcelList } from "../../utils/queries/accountQueries";
 import { getFromStorage } from "../../utils/storage";
 import Loader from "../../components/Loader";
+import { ContactReceiverPopup } from "../../components/ContactReceiverPopup"
 
 
 
 const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
   const navigation = useNavigation();
-
+  const [selectedDelivery, setSelectedDelivery] = useState<DeliveryItem | null>(null);
+  const onChatPress = (item: DeliveryItem) => {
+    setSelectedDelivery(item);
+    console.log("Chat Clicked", item);
+    navigation.navigate(
+      "ChatRoom",
+      { chatId: item?.rider.id },
+    );
+  };
   // const handleDeliveryPress = (delivery: DeliveryItem) => {
   //   // Navigate to RideDetailsMap screen with the delivery ID
   //   navigation.navigate("RideDetailsMap", { deliveryId: delivery.id })
@@ -77,25 +90,44 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
 
       <View style={styles.progressContainer}>
         <View style={styles.progressStep}>
-          <View style={[styles.progressDot, styles.activeDot]} />
+          <View style={[styles.progressDot, styles.activeDot]}>
+            <View style={styles.innerDot} />
+          </View>
           <Text style={styles.progressText}>Order</Text>
         </View>
+
         <View style={[styles.progressLine, styles.activeLine]} />
+
         <View style={styles.progressStep}>
-          <View style={[styles.progressDot, item.status !== "Order" ? styles.activeDot : styles.inactiveDot]} />
+          <View style={[
+            styles.progressDot,
+            item.status !== "Order" ? styles.activeDot : styles.inactiveDot
+          ]}>
+            {item.status !== "Order" && <View style={styles.innerDot} />}
+          </View>
           <Text style={styles.progressText}>Picked up</Text>
         </View>
+
         <View style={[styles.progressLine, item.status === "In transit" ? styles.activeLine : styles.inactiveLine]} />
+
         <View style={styles.progressStep}>
-          <View style={[styles.progressDot, item.status === "In transit" ? styles.activeDot : styles.inactiveDot]} />
+          <View style={[
+            styles.progressDot,
+            item.status === "In transit" ? styles.activeDot : styles.inactiveDot
+          ]}>
+            {item.status === "In transit" && <View style={styles.innerDot} />}
+          </View>
           <Text style={styles.progressText}>In transit</Text>
         </View>
+
         <View style={[styles.progressLine, styles.inactiveLine]} />
+
         <View style={styles.progressStep}>
           <View style={[styles.progressDot, styles.inactiveDot]} />
           <Text style={styles.progressText}>Delivered</Text>
         </View>
       </View>
+
 
       <View style={styles.riderContainer}>
         <Image source={item.rider.avatar} style={styles.riderAvatar} />
@@ -114,9 +146,9 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
         </View>
         <View style={styles.riderActions}>
           <TouchableOpacity style={styles.riderAction}>
-            <Icon name="chatbubble-outline" size={20} color={colors.primary} />
+            <Icon name="chatbubble-outline" size={20} color={colors.primary} onPress={() => onChatPress(item)} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.riderAction}>
+          <TouchableOpacity style={styles.riderAction} onPress={() => setSelectedDelivery(item)}>
             <Icon name="phone-portrait-outline" size={20} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -129,19 +161,127 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
   )
 
   return (
-    <FlatList
-      data={deliveries}
-      renderItem={renderDeliveryItem}
-      keyExtractor={(item, index) => `${item.id}-${index}`}
-      contentContainerStyle={styles.listContainer}
-      showsVerticalScrollIndicator={false}
-    />
+    <>
+      <FlatList
+        data={deliveries}
+        renderItem={renderDeliveryItem}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+      />
+      <ContactReceiverPopup
+        visible={!!selectedDelivery}
+        onClose={() => setSelectedDelivery(null)}
+        name={selectedDelivery?.rider.name ?? ""}
+        phone={selectedDelivery?.rider.phone ?? ""}
+        email={""} // or from rider if available
+        address={selectedDelivery?.toAddress ?? ""}
+        onCall={() => {
+          console.log(`Calling ${selectedDelivery?.rider.name}...`);
+        }}
+      />
+
+    </>
+
   )
 }
 
 const styles = StyleSheet.create({
+  progressContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 16,
+  padding:0,
+  position: "relative",
+},
+
+progressStep: {
+  flex: 1,
+  alignItems: "center",
+  zIndex: 2,
+},
+
+progressDot: {
+  width: 16,
+  height: 16,
+  borderRadius: 8,
+  borderWidth: 2,
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#fff",
+},
+
+innerDot: {
+  width: 8,
+  height: 8,
+  borderRadius: 4,
+  backgroundColor: colors.primary,
+},
+
+activeDot: {
+  borderColor: colors.primary,
+},
+
+inactiveDot: {
+  borderColor: "#ccc",
+},
+
+progressLine: {
+  position: "absolute",
+  top: 7,
+  left: "10%",
+  width: "80%",
+  height: 2,
+  backgroundColor: "#E0E0E0",
+  zIndex: 1,
+},
+
+activeLine: {
+  backgroundColor: colors.primary,
+},
+
+inactiveLine: {
+  backgroundColor: "#E0E0E0",
+},
+
+progressText: {
+  fontSize: 10,
+  color: "#666666",
+  marginTop: 6,
+},
+
+  // progressLine: {
+  //   position: "absolute",
+  //   top: 10, // align with center of 20px dot
+  //   left: "10%",
+  //   width: "80%",
+  //   height: 2,
+  //   zIndex: 1,
+  // },
+
+  // activeLine: {
+  //   backgroundColor: colors.primary,
+  // },
+
+  // inactiveLine: {
+  //   backgroundColor: "#ccc",
+  // },
+
+  // // inactiveLine: {
+  // //   backgroundColor: "#E0E0E0",
+  // // },
+
+  // progressText: {
+  //   fontSize: 11,
+  //   color: "#000",
+  //   fontWeight: "500",
+  //   marginTop: 6,
+  //   textAlign: "center",
+  // },
+
   listContainer: {
-    padding: 16,
+    padding: 12,
   },
   deliveryCard: {
     backgroundColor: "#FFFFFF",
@@ -184,12 +324,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   addressLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#666666",
     marginBottom: 4,
   },
   addressText: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#000000",
     marginBottom: 12,
   },
@@ -202,49 +342,62 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#000000",
   },
-  progressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  progressStep: {
-    alignItems: "center",
-  },
-  progressDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  activeDot: {
-    backgroundColor: colors.primary,
-  },
-  inactiveDot: {
-    backgroundColor: "#E0E0E0",
-  },
-  progressLine: {
-    flex: 1,
-    height: 0.3,
-    marginBottom: 15,
-  },
-  activeLine: {
-    backgroundColor: colors.primary,
-  },
-  inactiveLine: {
-    backgroundColor: "#E0E0E0",
-  },
-  progressText: {
-    fontSize: 10,
-    color: "#666666",
-  },
+  //   progressContainer: {
+  //     flexDirection: "row",
+  //     alignItems: "center",
+  //     justifyContent: "space-between",
+  //     marginBottom: 16,
+  //   },
+  //   progressStep: {
+  //     alignItems: "center",
+  //   },
+  // progressDot: {
+  //   width: 16,
+  //   height: 16,
+  //   borderRadius: 8,
+  //   borderWidth: 2,
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  //   backgroundColor: "#fff",
+  // },
+  // innerDot: {
+  //   width: 8,
+  //   height: 8,
+  //   borderRadius: 4,
+  //   backgroundColor: colors.primary,
+  // },
+
+  // activeDot: {
+  //   borderColor: colors.primary,
+  // },
+  // inactiveDot: {
+  //   borderColor: "#ccc",
+  // },
+
+  //   progressLine: {
+  //     flex: 1,
+  //     height: 0.3,
+  //     marginBottom: 15,
+  //   },
+  //   activeLine: {
+  //     backgroundColor: colors.primary,
+  //   },
+  //   inactiveLine: {
+  //     backgroundColor: "#E0E0E0",
+  //   },
+  //   progressText: {
+  //     fontSize: 10,
+  //     color: "#666666",
+  //   },
   riderContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    paddingTop: 16,
+    // borderTopWidth: 1,
+    backgroundColor: "#F2F2F2",
+    paddingVertical: 16,
+    paddingHorizontal:10,
     marginBottom: 16,
+    borderRadius:10
   },
   riderAvatar: {
     width: 40,

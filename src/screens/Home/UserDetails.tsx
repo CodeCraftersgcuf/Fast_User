@@ -7,11 +7,15 @@ import { theme } from "../../constants/theme"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootStackParamList } from "../../types"
+import { useState } from "react"
+import { ContactReceiverPopup } from "../../components/ContactReceiverPopup"
 
 type UserDetailsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "UserDetails">
 
-export default function UserDetails() {
+export default function UserDetails({ route }: { route: any }) {
   const navigation = useNavigation<UserDetailsScreenNavigationProp>()
+  const { parcel } = route.params;
+  const [selectedDelivery, setSelectedDelivery] = useState<any | null>(null);
 
   const handleBackPress = () => {
     navigation.goBack()
@@ -19,8 +23,55 @@ export default function UserDetails() {
 
   const handleDeliveryPress = (orderId: string) => {
     console.log(`Delivery ${orderId} details pressed`)
-    // Navigate to detailed delivery view
   }
+
+  const formatStatus = (status: string): "Ordered" | "Picked up" | "In Transit" | "Delivered" => {
+    switch (status) {
+      case "ordered":
+        return "Picked up";
+      case "in_transit":
+        return "In Transit";
+      case "delivered":
+        return "Delivered";
+      default:
+        return "Ordered";
+    }
+  };
+ const onChatPress = () => {
+    // setSelectedDelivery(item);
+    console.log("Chat Clicked", parcel);
+    navigation.navigate(
+      "ChatRoom",
+      { chatId: parcel?.rider.id }
+    );
+  };
+  const formatDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString() : "";
+  const formatTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+
+  const timelineData = [
+    {
+      key: 'ordered_at',
+      label: 'Order Received',
+      location: parcel.sender_address,
+    },
+    {
+      key: 'picked_up_at',
+      label: 'Picked up',
+      location: parcel.sender_address,
+    },
+    {
+      key: 'in_transit_at',
+      label: 'In transit',
+      location: "On the way to destination",
+    },
+    {
+      key: 'delivered_at',
+      label: 'Delivered',
+      location: parcel.receiver_address,
+    },
+  ];
 
   return (
     <GradientBackground>
@@ -29,82 +80,62 @@ export default function UserDetails() {
 
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           <DeliveryCard
-            orderId="ORD-12ESCJK3K"
-            status="In Transit"
-            fromAddress="No 1, abcd street..."
-            toAddress="No 1, abcd street..."
-            orderTime={new Date("2023-02-23T11:24:00")}
-            estimatedDelivery={new Date("2023-02-23T13:22:00")}
-            riderName="Maleek Oladimeji"
-            riderRating={5}
-            onPress={() => handleDeliveryPress("ORD-12ESCJK3K")}
-            onChatPress={() => console.log("Chat with rider")}
-            onCallPress={() => console.log("Call rider")}
+            orderId={`ORD-${parcel.id}`}
+            status={formatStatus(parcel.status)}
+            fromAddress={parcel.sender_address}
+            toAddress={parcel.receiver_address}
+            orderTime={new Date(`${parcel.scheduled_date}T${parcel.scheduled_time}`)}
+            estimatedDelivery={new Date(parcel.ordered_at)}
+            riderName={parcel.rider?.name ?? "Not Assigned"}
+            riderRating={parcel.rider?.rating ?? 5}
+            onPress={() => handleDeliveryPress(`ORD-${parcel.id}`)}
+            onChatPress={ onChatPress} // 👈 trigger modal
+            onCallPress={() => setSelectedDelivery(parcel)} // 👈 trigger modal
           />
 
-          {/* Delivery Timeline */}
           <View style={styles.timelineContainer}>
             <Text style={styles.timelineTitle}>Delivery Timeline</Text>
 
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineLeft}>
-                <Text style={styles.timelineDate}>Feb 23</Text>
-                <Text style={styles.timelineTime}>11:24 AM</Text>
-              </View>
-              <View style={styles.timelineCenter}>
-                <View style={[styles.timelineDot, styles.timelineDotActive]} />
-                <View style={[styles.timelineLine, styles.timelineLineActive]} />
-              </View>
-              <View style={styles.timelineRight}>
-                <Text style={styles.timelineEvent}>Order Received</Text>
-                <Text style={styles.timelineLocation}>No 1, abcd street...</Text>
-              </View>
-            </View>
+            {timelineData.map((item, index) => {
+              const timeValue = parcel[item.key];
+              const isLast = index === timelineData.length - 1;
+              const isCompleted = !!timeValue;
+              const date = formatDate(timeValue);
+              const time = formatTime(timeValue);
 
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineLeft}>
-                <Text style={styles.timelineDate}>Feb 23</Text>
-                <Text style={styles.timelineTime}>11:45 AM</Text>
-              </View>
-              <View style={styles.timelineCenter}>
-                <View style={[styles.timelineDot, styles.timelineDotActive]} />
-                <View style={[styles.timelineLine, styles.timelineLineActive]} />
-              </View>
-              <View style={styles.timelineRight}>
-                <Text style={styles.timelineEvent}>Picked up</Text>
-                <Text style={styles.timelineLocation}>No 1, abcd street...</Text>
-              </View>
-            </View>
-
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineLeft}>
-                <Text style={styles.timelineDate}>Feb 23</Text>
-                <Text style={styles.timelineTime}>12:30 PM</Text>
-              </View>
-              <View style={styles.timelineCenter}>
-                <View style={[styles.timelineDot, styles.timelineDotActive]} />
-                <View style={styles.timelineLine} />
-              </View>
-              <View style={styles.timelineRight}>
-                <Text style={styles.timelineEvent}>In transit</Text>
-                <Text style={styles.timelineLocation}>On the way to destination</Text>
-              </View>
-            </View>
-
-            <View style={styles.timelineItem}>
-              <View style={styles.timelineLeft}>
-                <Text style={styles.timelineDate}>Feb 23</Text>
-                <Text style={styles.timelineTime}>01:22 PM</Text>
-              </View>
-              <View style={styles.timelineCenter}>
-                <View style={styles.timelineDot} />
-              </View>
-              <View style={styles.timelineRight}>
-                <Text style={styles.timelineEvent}>Delivered</Text>
-                <Text style={styles.timelineLocation}>No 1, abcd street...</Text>
-              </View>
-            </View>
+              return (
+                <View key={item.key} style={styles.timelineItem}>
+                  <View style={styles.timelineLeft}>
+                    <Text style={styles.timelineDate}>{date}</Text>
+                    <Text style={styles.timelineTime}>{time}</Text>
+                  </View>
+                  <View style={styles.timelineDot}>
+                    <View style={[styles.dot, isCompleted ? styles.dotActive : styles.dotInactive]}>
+                      {isCompleted && <View style={styles.innerDot} />}
+                    </View>
+                    {!isLast && <View style={[styles.timelineLine, isCompleted ? styles.lineActive : styles.lineInactive]} />}
+                  </View>
+                  <View style={styles.timelineContent}>
+                    <Text style={styles.timelineText}>{item.label}</Text>
+                    <Text style={styles.timelineLocation}>{item.location}</Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
+          <ContactReceiverPopup
+    visible={!!selectedDelivery}            
+    onClose={() => setSelectedDelivery(null)} // or a dedicated modal toggle if you want to keep this optional
+            name={parcel.receiver_name}
+            phone={parcel.receiver_phone}
+            email={parcel.rider?.email ?? ""}
+            address={parcel.receiver_address}
+            onCall={() => {
+              console.log(`Calling ${parcel.receiver_phone}`);
+              // You can also use:
+              // Linking.openURL(`tel:${parcel.receiver_phone}`);
+            }}
+          />
         </ScrollView>
       </SafeAreaView>
     </GradientBackground>
@@ -115,19 +146,18 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     marginTop: theme.spacing.xl,
-    marginBottom: 110
+    marginBottom: 110,
   },
   container: {
     flex: 1,
     padding: theme.spacing.md,
-   
   },
   timelineContainer: {
     backgroundColor: colors.white,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     marginTop: theme.spacing.md,
-    marginBottom: 40
+    marginBottom: 40,
   },
   timelineTitle: {
     fontSize: theme.fontSizes.md,
@@ -137,58 +167,73 @@ const styles = StyleSheet.create({
   },
   timelineItem: {
     flexDirection: "row",
-    marginBottom: theme.spacing.lg,
+    alignItems: "center",
+    marginBottom: 18,
   },
   timelineLeft: {
-    width: 80,
+    width: 70,
   },
   timelineDate: {
-    fontSize: theme.fontSizes.sm,
-    color: colors.text.secondary,
+    fontSize: 12,
+    color: "#888",
   },
   timelineTime: {
-    fontSize: theme.fontSizes.sm,
-    fontWeight: "500",
-    color: colors.text.primary,
-  },
-  timelineCenter: {
-    alignItems: "center",
-    width: 24,
+    fontSize: 12,
+    color: "#555",
   },
   timelineDot: {
+    width: 30,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    position: "relative",
+  },
+  dot: {
     width: 16,
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: colors.grey,
-    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    zIndex: 1,
   },
-  timelineDotActive: {
+  dotActive: {
     borderColor: colors.primary,
+  },
+  dotInactive: {
+    borderColor: "#ccc",
+  },
+  innerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.primary,
   },
   timelineLine: {
+    position: "absolute",
+    top: 16,
     width: 2,
-    flex: 1,
-    backgroundColor: colors.grey,
-    marginVertical: 4,
+    height: 40,
+    backgroundColor: "#ccc",
+    zIndex: 0,
   },
-  timelineLineActive: {
+  lineActive: {
     backgroundColor: colors.primary,
   },
-  timelineRight: {
-    flex: 1,
-    paddingLeft: theme.spacing.md,
+  lineInactive: {
+    backgroundColor: "#ccc",
   },
-  timelineEvent: {
-    fontSize: theme.fontSizes.md,
-    fontWeight: "500",
-    color: colors.text.primary,
-    marginBottom: 4,
+  timelineContent: {
+    flex: 1,
+    paddingLeft: 10,
+  },
+  timelineText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#333",
   },
   timelineLocation: {
-    fontSize: theme.fontSizes.sm,
-    color: colors.text.secondary,
+    fontSize: 10,
+    color: "#888",
   },
-})
-
+});

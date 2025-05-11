@@ -115,7 +115,7 @@ export function DeliveryCard({
                 <Icon
                   key={index}
                   name={index < riderRating ? "star" : "star-outline"}
-                  size={16}
+                  size={14}
                   color={colors.primary}
                 />
               ))}
@@ -124,10 +124,10 @@ export function DeliveryCard({
         </View>
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.actionButton} onPress={onChatPress}>
-            <Icon name="chatbubble-outline" size={20} color={colors.primary} />
+            <Icon name="chatbubble-outline" size={18} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={onCallPress}>
-            <Icon name="call-outline" size={20} color={colors.primary} />
+            <Icon name="call-outline" size={18} color={colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   value: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.text.primary,
     fontWeight: "500",
   },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   riderName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.text.primary,
   },
@@ -270,8 +270,8 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   actionButton: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 20,
     backgroundColor: colors.grey,
     alignItems: "center",

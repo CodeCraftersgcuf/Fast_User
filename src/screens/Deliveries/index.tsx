@@ -75,6 +75,7 @@ const DeliveryHistory = () => {
   };
   const scheduledData: DeliveryItem[] = historyData?.data?.scheduled?.map((item: any) => ({
     id: item.id.toString(),
+    userId: item.user_id.toString(),
     status: "Scheduled",
     fromAddress: item.sender_address,
     toAddress: item.receiver_address,
@@ -86,14 +87,17 @@ const DeliveryHistory = () => {
 
   const activeData: DeliveryItem[] = historyData?.data?.active?.map((item: any) => ({
     id: item.id.toString(),
+      userId: item.user_id.toString(),
     status: item.status === "ordered" ? "Order" : item.status,
     fromAddress: item.sender_address,
     toAddress: item.receiver_address,
     orderTime: new Date(item.ordered_at || item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     deliveryTime: item.delivery_fee + " fee", // or customize
     rider: {
+         id: item.accepted_bid?.rider?.id,
       name: item.accepted_bid?.rider?.name || "Unknown",
       avatar: { uri: `https://fastlogistic.hmstech.xyz/storage/${item.accepted_bid?.rider?.profile_picture}` },
+      phone: item.accepted_bid?.rider?.phone,
       rating: 5, // replace with actual rating if available
     },
   })) || [];
@@ -101,14 +105,18 @@ const DeliveryHistory = () => {
   const deliveredData: DeliveryItem[] = historyData?.data?.delivered?.map((item: any) => ({
     id: item.id.toString(),
     status: "Delivered",
+      userId: item.user_id.toString(),
     fromAddress: item.sender_address,
     toAddress: item.receiver_address,
     orderTime: new Date(item.ordered_at || item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     deliveryTime: new Date(item.delivered_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     rider: {
+      id: item.accepted_bid?.rider?.id,
       name: item.accepted_bid?.rider?.name || "Unknown",
       avatar: { uri: `https://fastlogistic.hmstech.xyz/storage/${item.accepted_bid?.rider?.profile_picture}` },
       rating: 5, // or item.accepted_bid?.rider?.rating if available
+      phone: item.accepted_bid?.rider?.phone
+
     },
   })) || [];
 
@@ -178,7 +186,7 @@ const DeliveryHistory = () => {
       </View>
 
       {renderTabContent()}
-    
+
     </SafeAreaView>
   )
 }

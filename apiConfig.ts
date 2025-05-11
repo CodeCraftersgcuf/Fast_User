@@ -32,6 +32,7 @@ const API_ENDPOINTS = {
     SendMessage: API_DOMAIN + "/chat/send",
 
     ParcelBidCreate: API_DOMAIN + "/parcel-bid/create-by-user",
+    ActiveParcel: API_DOMAIN + "/sendparcel/get-active-parcel-user",
 
     ParcelBidList: (id: number | string) =>
       `${API_DOMAIN}/parcel-bid/${id}/list`,

@@ -13,11 +13,12 @@ interface PromotionCardProps {
 export const PromotionCard: React.FC<PromotionCardProps> = ({ title, description, tag, imageUrl }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.tagContainer}>
-        <Text style={styles.tag}>{tag}</Text>
-      </View>
+    
       <View style={styles.contentContainer}>
         <View style={styles.textContainer}>
+            <View style={styles.tagContainer}>
+        <Text style={styles.tag}>{tag}</Text>
+      </View>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.description}>{description}</Text>
         </View>
@@ -36,7 +37,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     overflow: "hidden",
     marginVertical: theme.spacing.md,
-    height:150,
+    height:170,
   },
   tagContainer: {
     backgroundColor: colors.white,
@@ -44,7 +45,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.md,
-    margin: theme.spacing.sm,
+    // margin: theme.spacing.sm,
+    marginBottom:10,
+    marginTop:-5
   },
   tag: {
     fontSize: theme.fontSizes.xs,
@@ -71,10 +74,10 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   image: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 150,
     position: 'absolute',
-    top:-10,
+    top:20,
     right:5,
 
   },

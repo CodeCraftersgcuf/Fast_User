@@ -72,7 +72,7 @@ export default function DeliveryDetails() {
   const [routePolyline, setRoutePolyline] = useState<{ latitude: number; longitude: number }[]>([]);
   const GOOGLE_KEY = GOOGLE_MAPS_API_KEY;
 
-  console.log("The Google Api", GOOGLE_KEY);
+  console.log("The Google Api hh", GOOGLE_KEY);
   // Get parcelId from route params
   const parcelId = route.params?.delivery?.id;
   // Fetch token
@@ -267,7 +267,7 @@ export default function DeliveryDetails() {
           </MapView>
         </View>
 
-        <View>
+        <View style={[{ marginBottom: 130 }]}>
           <View style={styles.profileCard}>
             <View style={styles.profileHeader}>
               <View style={styles.profileInfo}>
@@ -334,32 +334,35 @@ export default function DeliveryDetails() {
                     <Text style={styles.timelineDate}>{item.date}</Text>
                     <Text style={styles.timelineTime}>{item.time}</Text>
                   </View>
+
+                  {/* FIX: Close dot properly and move content out */}
                   <View style={styles.timelineDot}>
                     <View
                       style={[
                         styles.dot,
-                        item.isCompleted
-                          ? styles.dotActive
-                          : styles.dotInactive,
+                        item.isCompleted ? styles.dotActive : styles.dotInactive,
                       ]}
-                    />
+                    >
+                      {item.isCompleted && <View style={styles.innerDot} />}
+                    </View>
+
                     {index < timelineData.length - 1 && (
                       <View
                         style={[
                           styles.timelineLine,
-                          item.isCompleted
-                            ? styles.lineActive
-                            : styles.lineInactive,
+                          item.isCompleted ? styles.lineActive : styles.lineInactive,
                         ]}
                       />
                     )}
                   </View>
+
                   <View style={styles.timelineContent}>
                     <Text style={styles.timelineText}>{item.text}</Text>
                     <Text style={styles.timelineLocation}>{item.location}</Text>
                   </View>
                 </View>
               ))}
+
             </View>
           </View>
         </View>
@@ -462,6 +465,10 @@ const styles = StyleSheet.create({
   markerInnerEnd: {
     backgroundColor: "#F44336",
   },
+  lineInactive: {
+    backgroundColor: "#ccc",
+  },
+
   profileCard: {
     backgroundColor: "#5B1170", // Deep purple for sleek design
     borderTopLeftRadius: 20,
@@ -571,40 +578,59 @@ const styles = StyleSheet.create({
     color: "#555",
   },
   timelineDot: {
-    alignItems: "center",
-    justifyContent: "center",
     width: 30,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    position: "relative", // Needed for absolute line
   },
   dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff", // optional: to see better
+    zIndex: 1,
   },
+
   dotActive: {
-    backgroundColor: "#5B1170",
+    borderColor: colors.primary,
   },
   dotInactive: {
-    backgroundColor: "#ccc",
+    borderColor: "#ccc",
+  },
+  innerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
   },
   timelineLine: {
+    position: "absolute",
+    top: 16, // positions line just below dot
     width: 2,
-    height: 20,
+    height: 40, // make this long enough to reach next dot
     backgroundColor: "#ccc",
+    zIndex: 0,
   },
+
   lineActive: {
-    backgroundColor: "#5B1170",
+    backgroundColor: colors.primary,
   },
+
+
   timelineContent: {
     flex: 1,
     paddingLeft: 10,
   },
   timelineText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
     color: "#333",
   },
   timelineLocation: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#888",
   },
 });

@@ -23,6 +23,15 @@ export const getParcelBidList = async (
     token
   );
 };
+export const getActiveParcel = async (
+  token: string,
+): Promise<any> => {
+  console.log(
+    "🔹 Sending Parcel List Request with location:",
+  );
+  const url = `${API_ENDPOINTS.USER.ActiveParcel}`;
+  return await apiCall(url, "GET", undefined, token);
+};
 
 export const getBalance = async (token: string): Promise<any> => {
   return await apiCall(API_ENDPOINTS.USER.Balance, "GET", undefined, token);
