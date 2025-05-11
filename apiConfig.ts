@@ -39,6 +39,11 @@ const API_ENDPOINTS = {
     ParcelCancel: (id: number | string) =>
       `${API_DOMAIN}/sendparcel/${id}/cancel`,
 
+    Balance: API_DOMAIN + "/wallet/balance",
+    TransactionHistory: API_DOMAIN + "/wallet/transactions",
+    WalletTopup: API_DOMAIN + "/wallet/add-payment",
+    AccountDetail: API_DOMAIN + "/wallet/virtual-account/generate",
+
     EditProfile: API_DOMAIN + "/user/update-profile",
 
     DeliveryHistory: API_DOMAIN + "/history/user",

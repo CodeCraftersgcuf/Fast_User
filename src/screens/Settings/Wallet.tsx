@@ -839,7 +839,6 @@
 // })
 
 
-"use client"
 
 import { useState, useEffect } from "react"
 import {
@@ -862,6 +861,19 @@ import { RouteProp, useRoute } from "@react-navigation/native"
 
 type WalletScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, "Wallet">
 
+
+//Code Related to the Integration
+import { useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
+import { getFromStorage } from "../../utils/storage";
+import Loader from "../../components/Loader";
+
+import { getBalance } from "../../utils/queries/accountQueries";
+import { getTransactionHistory } from "../../utils/queries/accountQueries";
+import { postWalletTopup } from "../../utils/queries/accountQueries";
+import { getAccountDetail } from "../../utils/queries/accountQueries";
+
+
 interface Transaction {
   id: string
   type: "topup" | "withdrawal"
@@ -875,7 +887,8 @@ type ModalType = "topup" | "withdraw" | "none"
 type ConfirmationStatus = "success" | "error" | "none"
 
 export default function WalletScreen() {
-  const navigation = useNavigation<WalletScreenNavigationProp>()
+  const navigation = useNavigation<WalletScreenNavigationProp>();
+  const [token, setToken] = useState<string | null>(null);
   const [balance, setBalance] = useState(25000)
   const [filter, setFilter] = useState<TransactionFilter>("all")
   const [activeModal, setActiveModal] = useState<ModalType>("none")
@@ -887,20 +900,91 @@ export default function WalletScreen() {
   const [bankName, setBankName] = useState("")
   const [accountName, setAccountName] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
-  const [saveBankDetails, setSaveBankDetails] = useState(false)
+  const [saveBankDetails, setSaveBankDetails] = useState(false);
+  const [accountDetails, setAccountDetails] = useState<any>(null);
 
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: "1", type: "withdrawal", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "2", type: "withdrawal", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "3", type: "withdrawal", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "4", type: "withdrawal", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "5", type: "withdrawal", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "6", type: "topup", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "7", type: "topup", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "8", type: "topup", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "9", type: "topup", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-    { id: "10", type: "topup", amount: 2500, date: "02/03/25 - 11:22 AM", status: "completed" },
-  ])
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const {
+    data: balanceData,
+    isLoading: isBalanceLoading
+  } = useQuery({
+    queryKey: ['walletBalance', token],
+    queryFn: () => getBalance(token!),
+    enabled: !!token, // Only run the query if token is available
+  });
+
+  const {
+    data: transactionData,
+    isLoading: isTransactionsLoading
+  } = useQuery({
+    queryKey: ['walletTransactions', token],
+    queryFn: () => getTransactionHistory(token!),
+    enabled: !!token, // Only run the query if token is available
+  });
+
+  const {
+    mutate: walletTopup,
+    isPending: isTopupLoading
+  } = useMutation({
+    mutationFn: () => postWalletTopup(token!),
+    onSuccess: (data) => {
+      console.log("✅ Wallet top-up successful:", data);
+    },
+    onError: (err) => {
+      console.error("❌ Top-up failed", err);
+    },
+  });
+
+
+  const {
+    mutate: accountDetail,
+    isPending: isAccountLoading,
+  } = useMutation({
+    mutationFn: () => getAccountDetail(token!),
+    onSuccess: (data) => {
+      console.log("✅ Account details fetched successfully:", data);
+      setAccountDetails(data.virtual_account); // Store account detail if needed
+    },
+    onError: (error) => {
+      console.error("❌ Error fetching account details:", error);
+    },
+  });
+
+  useEffect(() => {
+    if (token) {
+      accountDetail();
+    }
+  }, [token]);
+
+
+  console.log("🔹 Account Detail:", accountDetail);
+
+
+
+  const transactions: Transaction[] = (transactionData?.transactions || []).map((tx: any) => ({
+    id: tx.id.toString(),
+    type: tx.transaction_type === 'topup' ? 'topup' : 'withdrawal',
+    amount: parseFloat(tx.amount),
+    date: new Date(tx.created_at).toLocaleString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }),
+    status: tx.status,
+  }));
+
 
   // 👇 Add this inside the component
   const route = useRoute<RouteProp<SettingsStackParamList, "Wallet">>()
@@ -1033,7 +1117,7 @@ export default function WalletScreen() {
 
       <View style={styles.balanceContainer}>
         <Text style={styles.balanceLabel}>Available Balance</Text>
-        <Text style={styles.balanceAmount}>₦ {balance.toLocaleString()}</Text>
+        <Text style={styles.balanceAmount}>₦ {Number(balanceData?.balance || 0).toLocaleString()}</Text>
       </View>
 
       <View style={styles.actionsContainer}>
@@ -1071,12 +1155,19 @@ export default function WalletScreen() {
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={filteredTransactions}
-          renderItem={renderTransactionItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.transactionsList}
-        />
+        {isTransactionsLoading ? (
+          <Loader />
+        ) : filteredTransactions.length === 0 ? (
+          <Text style={{ textAlign: 'center', marginTop: 20 }}>No transactions found.</Text>
+        ) : (
+          <FlatList
+            data={filteredTransactions}
+            renderItem={renderTransactionItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.transactionsList}
+          />
+        )}
+
       </View>
 
       {/* Topup Modal */}
@@ -1098,12 +1189,12 @@ export default function WalletScreen() {
               </View>
               <View style={styles.bankDetailRow}>
                 <Text style={styles.bankDetailLabel}>Account Name</Text>
-                <Text style={styles.bankDetailValue}>Fast Logistics</Text>
+                {accountDetail?.virtual_account?.account_name || "Fast Logistics"}
               </View>
               <View style={styles.bankDetailRow}>
                 <Text style={styles.bankDetailLabel}>Account Number</Text>
                 <View style={styles.accountNumberContainer}>
-                  <Text style={styles.bankDetailValue}>123456789</Text>
+                  {accountDetail?.virtual_account?.account_number || "1234567890"}
                   <Icon name="copy-outline" size={20} color="#000000" />
                 </View>
               </View>

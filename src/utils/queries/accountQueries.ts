@@ -24,6 +24,33 @@ export const getParcelBidList = async (
   );
 };
 
+export const getBalance = async (token: string): Promise<any> => {
+  return await apiCall(API_ENDPOINTS.USER.Balance, "GET", undefined, token);
+};
+export const getTransactionHistory = async (token: string): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.TransactionHistory,
+    "GET",
+    undefined,
+    token
+  );
+};
+
+export const postWalletTopup = async (token: string): Promise<any> => {
+  const data = {
+    amount: "1000", // hardcoded amount
+  };
+
+  return await apiCall(API_ENDPOINTS.USER.WalletTopup, "POST", data, token);
+};
+export const getAccountDetail = async (token: string): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.AccountDetail,
+    "POST",
+    undefined,
+    token
+  );
+};
 export const cancelParcel = async (
   id: number | string,
   token: string
