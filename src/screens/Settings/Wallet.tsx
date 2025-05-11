@@ -966,7 +966,7 @@ export default function WalletScreen() {
   }, [token]);
 
 
-  console.log("🔹 Account Detail:", accountDetail);
+  console.log("🔹 Account Detail:", accountDetails);
 
 
 
@@ -1012,14 +1012,13 @@ export default function WalletScreen() {
   }
 
   const handlePaymentMade = () => {
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      // 90% chance of success
-      if (Math.random() > 0.1) {
-        setConfirmationStatus("success")
-        // Add transaction to history
+    setIsLoading(true);
+
+    walletTopup(undefined, {
+      onSuccess: () => {
+        setIsLoading(false);
+        setConfirmationStatus("success");
+
         const newTransaction: Transaction = {
           id: (transactions.length + 1).toString(),
           type: "topup",
@@ -1033,14 +1032,19 @@ export default function WalletScreen() {
             hour12: true,
           }),
           status: "completed",
-        }
-        setTransactions([newTransaction, ...transactions])
-        setBalance((prev) => prev + 2500)
-      } else {
-        setConfirmationStatus("error")
-      }
-    }, 2000)
-  }
+        };
+
+        // Optional: Add transaction to list or refetch
+        // setTransactions([newTransaction, ...transactions]);
+        setBalance((prev) => prev + 2500);
+      },
+      onError: () => {
+        setIsLoading(false);
+        setConfirmationStatus("error");
+      },
+    });
+  };
+
 
   const handlePlaceWithdrawal = () => {
     if (!withdrawAmount || !bankName || !accountName || !accountNumber) return
@@ -1189,15 +1193,21 @@ export default function WalletScreen() {
               </View>
               <View style={styles.bankDetailRow}>
                 <Text style={styles.bankDetailLabel}>Account Name</Text>
-                {accountDetail?.virtual_account?.account_name || "Fast Logistics"}
+                <Text>
+                  {accountDetails?.virtual_account?.account_name || "Fast Logistics"}
+                </Text>
               </View>
+
               <View style={styles.bankDetailRow}>
                 <Text style={styles.bankDetailLabel}>Account Number</Text>
                 <View style={styles.accountNumberContainer}>
-                  {accountDetail?.virtual_account?.account_number || "1234567890"}
+                  <Text style={{ marginRight: 8 }}>
+                    {accountDetails?.virtual_account?.account_number || "1234567890"}
+                  </Text>
                   <Icon name="copy-outline" size={20} color="#000000" />
                 </View>
               </View>
+
               <View style={styles.warningContainer}>
                 <Icon name="alert-triangle" size={16} color="#FF9800" />
                 <Text style={styles.warningText}>Kindly note that this account can be used only once</Text>
@@ -1217,10 +1227,11 @@ export default function WalletScreen() {
             )}
           </TouchableOpacity>
         </SafeAreaView>
-      </Modal>
+      </Modal >
 
       {/* Withdraw Modal */}
-      <Modal visible={activeModal === "withdraw"} transparent={true} animationType="slide" onRequestClose={closeModal}>
+      <Modal Modal visible={activeModal === "withdraw"
+      } transparent={true} animationType="slide" onRequestClose={closeModal} >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={closeModal} style={styles.modalBackButton}>
@@ -1293,10 +1304,10 @@ export default function WalletScreen() {
             )}
           </TouchableOpacity>
         </SafeAreaView>
-      </Modal>
+      </Modal >
 
       {/* Confirmation Modal */}
-      <Modal
+      < Modal
         visible={confirmationStatus !== "none"}
         transparent={true}
         animationType="fade"
@@ -1347,8 +1358,8 @@ export default function WalletScreen() {
             </Text>
           </View>
         </View>
-      </Modal>
-    </SafeAreaView>
+      </Modal >
+    </SafeAreaView >
   )
 }
 
