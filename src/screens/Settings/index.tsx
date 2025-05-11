@@ -1,7 +1,4 @@
 
-
-"use client"
-
 import { useState, useEffect } from "react"
 import {
   View,
@@ -25,12 +22,17 @@ import type { SettingsStackParamList } from "../../types/navigation"
 type SettingsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList, "SettingsMain">
 
 //
-import { getFromStorage } from "../../utils/storage";
+import { getFromStorage, removeFromStorage } from "../../utils/storage";
+import { useAuth } from "../../contexts/AuthContext"; // 👈
+
+
 
 export default function SettingsScreen() {
   const navigation = useNavigation<SettingsScreenNavigationProp>()
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [userData, setUserData] = useState<any>(null); // You can type this more strictly later
+  const { logout } = useAuth(); // 👈 grab logout from context
+  const [balance, setBalance] = useState(25000)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -76,14 +78,18 @@ export default function SettingsScreen() {
     setShowLogoutModal(true)
   }
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     setShowLogoutModal(false)
     // Implement logout logic here
     // navigation.navigate("Login")
+    await removeFromStorage("authToken");
+    await removeFromStorage("user");
+    logout(); // 👈 set isAuthenticated to false
   }
 
-  const cancelLogout = () => {
-    setShowLogoutModal(false)
+  const cancelLogout = async () => {
+    setShowLogoutModal(false);
+
   }
 
   return (
@@ -93,7 +99,11 @@ export default function SettingsScreen() {
       <View style={styles.profileHeader}>
         <View style={styles.profileLeftSection}>
           <Image
-            source={userData?.avatar ? { uri: userData.avatar } : require("../../assets/images/pp.png")}
+            source={
+              userData?.profile_picture
+                ? { uri: `https://fastlogistic.hmstech.xyz/storage/${userData.profile_picture}` }
+                : require("../../assets/images/pp.png")
+            }
             style={styles.profileAvatar}
           />
           <TouchableOpacity style={styles.editProfileButton} onPress={handleEditProfile}>

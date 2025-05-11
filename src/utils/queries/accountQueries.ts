@@ -63,6 +63,18 @@ export const cancelParcel = async (
   );
 };
 
+export const getParcelDetail = async (
+  id: number | string,
+  token: string
+): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.ParcelDetail(id), // ✅ Use the function with id
+    "GET",
+    undefined,
+    token
+  );
+};
+
 export const getUserDeiliveryHistory = async (token: string): Promise<any> => {
   return await apiCall(
     API_ENDPOINTS.USER.DeliveryHistory,

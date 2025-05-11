@@ -1,7 +1,4 @@
-
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -29,11 +26,46 @@ type UserScreenNavigationProp = NativeStackNavigationProp<
   "User"
 >;
 
+//Code Related to the Integration
+import { useQuery } from "@tanstack/react-query";
+import { getFromStorage } from "../../utils/storage";
+import { getBalance } from "../../utils/queries/accountQueries";
+
+
+
 export default function User() {
   const navigation = useNavigation<UserScreenNavigationProp>();
   const [balance, setBalance] = useState(200000);
   const [location, setLocation] = useState("Lagos, Ng");
   const [activeSlide, setActiveSlide] = useState(0);
+  const [userData, setUserData] = useState<any>(null); // You can type this more strictly later
+  const [token, setToken] = useState<string | null>(null);
+
+
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      const fetchedUser = await getFromStorage("user");
+
+      setUserData(fetchedUser);
+
+      console.log("🔹 Retrieved Token:", fetchedToken);
+      console.log("👤 Retrieved User:", fetchedUser);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const {
+    data: balanceData,
+    isLoading: isBalanceLoading
+  } = useQuery({
+    queryKey: ['walletBalance', token],
+    queryFn: () => getBalance(token!),
+    enabled: !!token, // Only run the query if token is available
+  });
+
 
   const promotions = [
     {
@@ -123,11 +155,15 @@ export default function User() {
           <View style={styles.header}>
             <View style={styles.userInfo}>
               <Image
-                source={require("../../assets/images/pp.png")}
+                source={
+                  userData?.profile_picture
+                    ? { uri: `https://fastlogistic.hmstech.xyz/storage/${userData.profile_picture}` }
+                    : require("../../assets/images/pp.png")
+                }
                 style={styles.avatar}
               />
               <View style={styles.userDetails}>
-                <Text style={styles.greeting}>Hi, Qamardeen</Text>
+                <Text style={styles.greeting}>Hi, {userData?.name}</Text>
                 <TouchableOpacity style={styles.locationContainer}>
                   <Text style={styles.location}>{location}</Text>
                   <Icon name="chevron-down" size={16} color={colors.white} />
@@ -148,7 +184,7 @@ export default function User() {
           {/* Balance */}
           <View style={styles.balanceContainer}>
             <View>
-              <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+              <Text style={styles.balanceAmount}>₦ {Number(balanceData?.balance || 0).toLocaleString()}</Text>
             </View>
             <View style={styles.balanceActions}>
               <TouchableOpacity

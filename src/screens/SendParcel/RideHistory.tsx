@@ -1,7 +1,4 @@
-
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image, StatusBar } from "react-native"
 import Icon from "react-native-vector-icons/Ionicons"
 import { useNavigation } from "@react-navigation/native"
@@ -11,54 +8,108 @@ import pp from "../../assets/images/pp.png"
 
 type RideHistoryNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "RideHistory">
 
+import { useRoute } from "@react-navigation/native"
+
+//Code Related to the Integration;
+import { useQuery } from "@tanstack/react-query"
+import { getParcelList } from "../../utils/queries/accountQueries";
+import { getFromStorage } from "../../utils/storage";
+import Loader from "../../components/Loader";
+
+
+
+
 interface RideHistoryItem {
-  id: string
+  id: number
   orderId: string
   status: "Order" | "Picked up" | "In transit" | "Delivered"
   from: string
   to: string
   orderTime: string
   deliveryTime: string
-  riderName: string
-  riderImage: string
-  riderRating: number
+  riderName?: string
+  riderImage?: string
+  riderRating?: number
 }
+
+
 
 export default function RideHistory() {
   const navigation = useNavigation<RideHistoryNavigationProp>()
   const [activeTab, setActiveTab] = useState<"Scheduled" | "Active" | "Delivered">("Active")
+  const [token, setToken] = useState<string | null>(null);
+  const route = useRoute()
+  const { parcel_id } = route.params ?? {}  // 👈 safely extract
+  const [rides, setRides] = useState<RideHistoryItem[]>([])
 
-  const [rides, setRides] = useState<RideHistoryItem[]>([
-    {
-      id: "1",
-      orderId: "ORD-12ESCJK3K",
-      status: "In transit",
-      from: "No 1, abcd street...",
-      to: "No 1, abcd street...",
-      orderTime: "11:24 AM",
-      deliveryTime: "01:22 PM",
-      riderName: "Maleek Oladimeji",
-      riderImage:
-       pp,
-      riderRating: 5,
-    },
-    {
-      id: "2",
-      orderId: "ORD-12ESCJK3K",
-      status: "In transit",
-      from: "No 1, abcd street...",
-      to: "No 1, abcd street...",
-      orderTime: "11:24 AM",
-      deliveryTime: "01:22 PM",
-      riderName: "Maleek Oladimeji",
-      riderImage:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/iPhone%2014%20%26%2015%20Pro%20Max%20-%2064-JyHllSe6QIfG3bCAR91gxzI12naOcC.png",
-      riderRating: 5,
-    },
-  ])
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
 
-  const handleRidePress = (ride: RideHistoryItem) => {
-    navigation.navigate("RidesDetails", { rideId: ride.id })
+    fetchUserData();
+  }, []);
+
+
+
+  useEffect(() => {
+    if (parcel_id) {
+      console.log("📦 Parcel ID from navigation:", parcel_id)
+      // you can fetch related data or highlight the specific ride
+    }
+  }, [parcel_id]);
+
+  const { data: parcelData, isLoading } = useQuery({
+    queryKey: ["parcelList", token],
+    queryFn: () => getParcelList(token!),
+    enabled: !!token,
+  });
+  useEffect(() => {
+    if (parcelData?.data) {
+      const raw = parcelData.data;
+
+      const transformToRideItem = (item: any): RideHistoryItem => ({
+        id: item.id,
+        orderId: `ORD-${item.id}`, // or use your real order ID if available
+        status:
+          item.status === "ordered"
+            ? "Order"
+            : item.status === "picked_up"
+              ? "Picked up"
+              : item.status === "in_transit"
+                ? "In transit"
+                : "Delivered",
+        from: item.sender_address,
+        to: item.receiver_address,
+        orderTime: new Date(item.ordered_at).toLocaleTimeString(),
+        deliveryTime: item.delivered_at
+          ? new Date(item.delivered_at).toLocaleTimeString()
+          : "N/A",
+        riderName: item?.accepted_bid?.rider?.name ?? "N/A",
+        riderImage: item?.accepted_bid?.rider?.profile_picture ?? undefined,
+        riderRating: 5, // Replace with real value if available
+      });
+
+      let filteredList = [];
+      if (activeTab === "Scheduled") {
+        filteredList = raw.scheduled.map(transformToRideItem);
+      } else if (activeTab === "Active") {
+        filteredList = raw.active.map(transformToRideItem);
+      } else if (activeTab === "Delivered") {
+        filteredList = raw.delivered.map(transformToRideItem);
+      }
+
+      setRides(filteredList);
+    }
+  }, [parcelData, activeTab]);
+
+
+
+  const handleRidePress = (ride) => {
+    const selectedParcel = parcelData.data[activeTab.toLowerCase()].find((p) => p.id === ride.id);
+    navigation.navigate("RidesDetails", { rideId: ride.id, parcel: selectedParcel });
   }
 
   return (
@@ -95,108 +146,121 @@ export default function RideHistory() {
         </View>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {rides.map((ride) => (
-          <TouchableOpacity key={ride.id} style={styles.rideCard} onPress={() => handleRidePress(ride)}>
-            <View style={styles.rideHeader}>
-              <Text style={styles.orderId}>{ride.orderId}</Text>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>In Transit</Text>
-              </View>
-            </View>
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+          {rides.length === 0 ? (
+            <Text style={{ textAlign: "center", marginTop: 40, color: "#999" }}>
+              No {activeTab.toLowerCase()} rides found.
+            </Text>
+          ) : (
+            rides.map((ride) => (
+              <TouchableOpacity key={ride.id} style={styles.rideCard} onPress={() => handleRidePress(ride)}>
+                <View style={styles.rideHeader}>
+                  <Text style={styles.orderId}>{ride.orderId}</Text>
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>In Transit</Text>
+                  </View>
+                </View>
 
-            <View style={styles.rideDetails}>
-              {/* Address section with columns */}
-              <View style={styles.addressSection}>
-                <View style={styles.addressColumns}>
-                  <View style={styles.addressColumn}>
-                    <Text style={styles.addressLabel}>From</Text>
-                    <Text style={styles.addressValue}>{ride.from}</Text>
+                <View style={styles.rideDetails}>
+                  {/* Address section with columns */}
+                  <View style={styles.addressSection}>
+                    <View style={styles.addressColumns}>
+                      <View style={styles.addressColumn}>
+                        <Text style={styles.addressLabel}>From</Text>
+                        <Text style={styles.addressValue}>{ride.from}</Text>
+                      </View>
+                      <View style={styles.addressColumn}>
+                        <Text style={styles.addressLabel}>To</Text>
+                        <Text style={styles.addressValue}>{ride.to}</Text>
+                      </View>
+                    </View>
                   </View>
-                  <View style={styles.addressColumn}>
-                    <Text style={styles.addressLabel}>To</Text>
-                    <Text style={styles.addressValue}>{ride.to}</Text>
-                  </View>
-                </View>
-              </View>
 
-              {/* Time section with columns */}
-              <View style={styles.timeSection}>
-                <View style={styles.timeColumns}>
-                  <View style={styles.timeColumn}>
-                    <Text style={styles.timeLabel}>Time of Order</Text>
-                    <Text style={styles.timeValue}>{ride.orderTime}</Text>
-                  </View>
-                  <View style={styles.timeColumn}>
-                    <Text style={styles.timeLabel}>Estimated Delivery</Text>
-                    <Text style={styles.timeValue}>{ride.deliveryTime}</Text>
+                  {/* Time section with columns */}
+                  <View style={styles.timeSection}>
+                    <View style={styles.timeColumns}>
+                      <View style={styles.timeColumn}>
+                        <Text style={styles.timeLabel}>Time of Order</Text>
+                        <Text style={styles.timeValue}>{ride.orderTime}</Text>
+                      </View>
+                      <View style={styles.timeColumn}>
+                        <Text style={styles.timeLabel}>Estimated Delivery</Text>
+                        <Text style={styles.timeValue}>{ride.deliveryTime}</Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </View>
 
-            <View style={styles.progressContainer}>
-              {/* Continuous progress line */}
-              <View style={styles.progressLineContainer}>
-                <View style={styles.activeLine} />
-                <View style={styles.inactiveLine} />
-              </View>
+                <View style={styles.progressContainer}>
+                  {/* Continuous progress line */}
+                  <View style={styles.progressLineContainer}>
+                    <View style={styles.activeLine} />
+                    <View style={styles.inactiveLine} />
+                  </View>
 
-              {/* Progress steps */}
-              <View style={styles.progressTracker}>
-                <View style={styles.progressStepContainer}>
-                  <View style={styles.progressDotOuter}>
-                    <View style={styles.progressDotInner} />
+                  {/* Progress steps */}
+                  <View style={styles.progressTracker}>
+                    <View style={styles.progressStepContainer}>
+                      <View style={styles.progressDotOuter}>
+                        <View style={styles.progressDotInner} />
+                      </View>
+                      <Text style={styles.progressLabel}>Order</Text>
+                    </View>
+                    <View style={styles.progressStepContainer}>
+                      <View style={styles.progressDotOuter}>
+                        <View style={styles.progressDotInner} />
+                      </View>
+                      <Text style={styles.progressLabel}>Picked up</Text>
+                    </View>
+                    <View style={styles.progressStepContainer}>
+                      <View style={styles.progressDotOuter}>
+                        <View style={styles.progressDotInner} />
+                      </View>
+                      <Text style={styles.progressLabel}>In transit</Text>
+                    </View>
+                    <View style={styles.progressStepContainer}>
+                      <View style={[styles.progressDotOuter, styles.inactiveDotOuter]}>
+                        <View style={[styles.progressDotInner, styles.inactiveDotInner]} />
+                      </View>
+                      <Text style={styles.progressLabel}>Delivered</Text>
+                    </View>
                   </View>
-                  <Text style={styles.progressLabel}>Order</Text>
                 </View>
-                <View style={styles.progressStepContainer}>
-                  <View style={styles.progressDotOuter}>
-                    <View style={styles.progressDotInner} />
-                  </View>
-                  <Text style={styles.progressLabel}>Picked up</Text>
-                </View>
-                <View style={styles.progressStepContainer}>
-                  <View style={styles.progressDotOuter}>
-                    <View style={styles.progressDotInner} />
-                  </View>
-                  <Text style={styles.progressLabel}>In transit</Text>
-                </View>
-                <View style={styles.progressStepContainer}>
-                  <View style={[styles.progressDotOuter, styles.inactiveDotOuter]}>
-                    <View style={[styles.progressDotInner, styles.inactiveDotInner]} />
-                  </View>
-                  <Text style={styles.progressLabel}>Delivered</Text>
-                </View>
-              </View>
-            </View>
 
-            <View style={styles.riderSection}>
-              <Image
-                source={pp}
-                style={styles.riderImage}
-                defaultSource={{ uri: "/placeholder.svg?height=50&width=50" }}
-              />
-              <View style={styles.riderInfo}>
-                <Text style={styles.riderName}>{ride.riderName}</Text>
-                <View style={styles.ratingContainer}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Icon key={star} name="star" size={14} color="#800080" />
-                  ))}
+                <View style={styles.riderSection}>
+                  <Image
+                    source={{
+                      uri: ride.riderImage
+                        ? `https://fastlogistic.hmstech.xyz/storage/${ride.riderImage}`
+                        : "https://your-default-placeholder.jpg",
+                    }}
+                    style={styles.riderImage}
+                  />
+                  <View style={styles.riderInfo}>
+                    <Text style={styles.riderName}>{ride.riderName}</Text>
+                    <View style={styles.ratingContainer}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Icon key={star} name="star" size={14} color="#800080" />
+                      ))}
+                    </View>
+                  </View>
+                  <View style={styles.riderActions}>
+                    <TouchableOpacity style={styles.riderActionButton}>
+                      <Icon name="chatbubble-ellipses" size={24} color="#800080" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.riderActionButton}>
+                      <Icon name="call" size={24} color="#800080" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.riderActions}>
-                <TouchableOpacity style={styles.riderActionButton}>
-                  <Icon name="chatbubble-ellipses" size={24} color="#800080" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.riderActionButton}>
-                  <Icon name="call" size={24} color="#800080" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              </TouchableOpacity>
+            ))
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   )
 }

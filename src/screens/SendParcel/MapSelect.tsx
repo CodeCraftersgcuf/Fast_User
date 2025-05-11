@@ -81,18 +81,27 @@ export default function MapSelect() {
     if (!selectedLocation) return;
     const address = selectedLocation.addressText || `${selectedLocation.latitude}, ${selectedLocation.longitude}`;
 
-    const type = route.params?.type || "sender";
-    const from = route.params?.from || "LocationSelect";
-
+       const type = route.params?.type || "sender"; // could be sender / receiver / address
+    const from = route.params?.from || "LocationSelect"; // default fallback
+  
     updateDeliveryDetails({
       [type === "sender" ? "senderAddress" : "receiverAddress"]: address,
     });
-
-    navigation.replace(from, {
-      selectedAddress: address,
-      type,
-      fromMap: true,
-    });
+  
+    // New Correct Condition using replace
+    if (from === "Address") {
+      navigation.replace("Address", { // ✅ REPLACE, not navigate
+        selectedAddress: address,
+        type,
+        fromMap: true,
+      });
+    } else {
+      navigation.replace("LocationSelect", { // ✅ REPLACE, not navigate
+        selectedAddress: address,
+        type,
+        fromMap: true,
+      });
+    }
   };
 
   const handleClose = () => navigation.goBack();

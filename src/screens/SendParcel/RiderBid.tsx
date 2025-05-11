@@ -75,6 +75,8 @@ export default function RiderBids({ route }: { route: { params: { amount: string
           distance: "Nearby",
           price: `₦ ${Number(bid.bid_amount).toLocaleString()}`,
           image: imageSource,
+          bidId: bid.id, // ✅ Save bid.id for later use
+
         };
       });
 
@@ -84,9 +86,13 @@ export default function RiderBids({ route }: { route: { params: { amount: string
   }, [parcelBidList])
 
   const handleBookRider = (rider: Rider) => {
+    console.log("Rider selected:", rider);
     navigation.navigate("RidesSummary", {
       rider,
       amount,
+      parcel_id,
+      bidId: rider.bidId, // ✅ Pass it forward
+      
     })
   }
 

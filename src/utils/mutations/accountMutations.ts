@@ -3,26 +3,18 @@ import { API_ENDPOINTS } from "../../../apiConfig";
 // import { ICooperateClient } from '@/app/createcoroporateaccount';
 import { apiCall } from "../customApiCall";
 
-
-
-
 export const sendMessage = async ({
   data,
   token,
-}: {  
+}: {
   data: {
     receiver_id: string;
     message: string;
   };
   token: string;
 }) => {
-  return await apiCall(
-    API_ENDPOINTS.USER.SendMessage,
-    "POST",
-    data,
-    token
-  );
-}
+  return await apiCall(API_ENDPOINTS.USER.SendMessage, "POST", data, token);
+};
 
 export const parcelBidCreate = async ({
   data,
@@ -36,6 +28,18 @@ export const parcelBidCreate = async ({
 }) => {
   console.log("📦 Creating Parcel Bid with:", data);
   return await apiCall(API_ENDPOINTS.USER.ParcelBidCreate, "POST", data, token);
+};
+
+export const acceptBid = async (
+  id: number | string,
+  token: string
+): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.AcceptBid(id), // ✅ Dynamic endpoint function
+    "PUT", // ✅ Correct HTTP method
+    undefined, // No body required
+    token
+  );
 };
 
 export const createAddress = async ({
@@ -91,6 +95,22 @@ export const deleteAddress = async ({
     data,
     token
   );
+};
+
+export const postSenderBank = async ({
+  id,
+  data,
+  token,
+}: {
+  id: number | string;
+  data: {
+    account_number: string;
+    account_name: string;
+    bank_name: string;
+  };
+  token: string;
+}) => {
+  return await apiCall(API_ENDPOINTS.USER.SenderBank(id), "POST", data, token);
 };
 
 export const editProfile = async ({

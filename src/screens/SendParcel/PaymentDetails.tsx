@@ -42,6 +42,7 @@ export default function PaymentDetails() {
   const [paymentMethod, setPaymentMethod] = useState(deliveryDetails.paymentMethod || "")
   const [isPayOnDelivery, setIsPayOnDelivery] = useState(deliveryDetails.payOnDelivery || false)
   const [amount, setAmount] = useState(deliveryDetails.amount ? deliveryDetails.amount.toString() : "2,500")
+  const [deliveryFee, setDeliveryFee] = useState("0")
 
   const [isPayerModalVisible, setIsPayerModalVisible] = useState(false)
   const [isPaymentMethodModalVisible, setIsPaymentMethodModalVisible] = useState(false)
@@ -102,14 +103,15 @@ export default function PaymentDetails() {
   // Update the handleProceed function to navigate to different paths based on payment method
   const handleProceed = () => {
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
-
+    const parsedDeliveryFee = Number.parseFloat(deliveryFee.replace(/,/g, ""));
+    console.log("Inside the Handle Proceed", parsedDeliveryFee);
     // Save to context
     updateDeliveryDetails({
       payer,
       paymentMethod,
       payOnDelivery: isPayOnDelivery,
-      amount: parsedAmount,
-      delivery: parsedAmount,
+      amount: isPayOnDelivery ? parsedAmount : 0,
+      delivery: parsedDeliveryFee,
     });
 
     // Just show appropriate modal – mutation will happen after confirm
@@ -137,12 +139,16 @@ export default function PaymentDetails() {
   const handleDeliveryFeeConfirm = () => {
     console.log("🚀 Delivery Fee Confirmed:", amount);
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
+    const parsedDeliveryFee = Number.parseFloat(deliveryFee.replace(/,/g, ""));
+
+    console.log("Hanlde Delivery Fee", parsedDeliveryFee);
+
     const payload = {
       payer: payer as "sender" | "receiver" | "third-party",
       payment_method: paymentMethod === "bank_transfer" ? "bank" : "wallet",
       pay_on_delivery: isPayOnDelivery,
-      amount: parsedAmount,
-      delivery_fee: parsedAmount,
+      amount: isPayOnDelivery ? parsedAmount : 0,  // ✅ This is for POD
+      delivery_fee: parsedDeliveryFee,             // ✅ This is what rider earns
     };
 
     submitStep4(payload, {
@@ -176,37 +182,36 @@ export default function PaymentDetails() {
 
   // Update the handleFeeConfirm function to navigate to SearchRider (not SearchRiders)
   const handleFeeConfirm = () => {
-    console.log("🚀 Delivery Fee Confirmed:", amount);
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
+    const parsedDeliveryFee = Number.parseFloat(deliveryFee.replace(/,/g, ""));
+
+    console.log("Handle Fee Confirm Inside.", parsedDeliveryFee);
+
     const payload = {
       payer: payer as "sender" | "receiver" | "third-party",
       payment_method: paymentMethod === "bank_transfer" ? "bank" : "wallet",
       pay_on_delivery: isPayOnDelivery,
-      amount: parsedAmount,
-      delivery_fee: parsedAmount,
+      amount: isPayOnDelivery ? parsedAmount : 0,
+      delivery_fee: parsedDeliveryFee,
     };
 
     submitStep4(payload, {
       onSuccess: async () => {
-        setIsDeliveryFeeModalVisible(false);
+        setIsFeeModalVisible(false);
 
         try {
           await parcelBidCreate({
             data: {
               send_parcel_id: parcelId,
-              bid_amount: parsedAmount,
+              bid_amount: parsedDeliveryFee,
             },
             token: token!,
           });
 
-          const navigationParams = {
-            amount: amount,
+          navigation.navigate("SearchRiders", {
+            amount: deliveryFee,
             send_parcel_id: parcelId.toString(),
-          };
-
-          console.log("🚀 Navigating to SearchRiders with:", navigationParams);
-
-          navigation.navigate("SearchRiders", navigationParams);
+          });
         } catch (error) {
           console.error("❌ Parcel bid creation failed:", error);
         }
@@ -215,16 +220,21 @@ export default function PaymentDetails() {
   };
 
 
+
   // Update the handleReceiverConfirm function to navigate to SearchRider
   const handleReceiverConfirm = () => {
     console.log("🚀 Delivery Fee Confirmed:", amount);
     const parsedAmount = Number.parseFloat(amount.replace(/,/g, ""));
+    const parsedDeliveryFee = Number.parseFloat(deliveryFee.replace(/,/g, ""));
+
+
+    console.log("This is being called:", parsedDeliveryFee);
     const payload = {
       payer: payer as "sender" | "receiver" | "third-party",
       payment_method: paymentMethod === "bank_transfer" ? "bank" : "wallet",
       pay_on_delivery: isPayOnDelivery,
       amount: parsedAmount,
-      delivery_fee: parsedAmount,
+      delivery_fee: parsedDeliveryFee,
     };
 
     submitStep4(payload, {
@@ -260,7 +270,13 @@ export default function PaymentDetails() {
   const handleAmountChange = (value: string) => {
     setAmount(value)
   }
+  const handleDeliveryFee = (value: string) => {
+    console.log("Amount Change.. of the Delivery...");
+    console.log(deliveryFee);
+    setDeliveryFee(value);
+    console.log(deliveryFee);
 
+  }
   const SelectionModal = ({
     visible,
     onClose,
@@ -526,16 +542,16 @@ export default function PaymentDetails() {
         visible={isDeliveryFeeModalVisible}
         onClose={() => setIsDeliveryFeeModalVisible(false)}
         onConfirm={handleDeliveryFeeConfirm}
-        amount={amount}
-        onAmountChange={setAmount}
+        amount={deliveryFee}
+        onAmountChange={handleDeliveryFee}
       />
 
       <FeeModal
         visible={isFeeModalVisible}
         onClose={() => setIsFeeModalVisible(false)}
         onConfirm={handleFeeConfirm}
-        amount={amount}
-        onAmountChange={setAmount}
+        amount={deliveryFee}
+        onAmountChange={handleDeliveryFee}
       />
 
       <ReceiverModal

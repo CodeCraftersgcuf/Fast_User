@@ -34,6 +34,7 @@ export type ScheduleStackParamList = {
 
 export type SendParcelStackParamList = {
   SendParcel: undefined;
+
   LocationSelect: undefined;
   AddressSelect: {
     type: "home" | "work";
@@ -63,7 +64,8 @@ export type SendParcelStackParamList = {
   RiderBids: { amount: string };
   RidersBid: { amount: string };
   RideSummary: { rider: any; amount: string };
-  RideHistory: undefined;
+  RideHistory: { parcel_id?: number }; // 👈 make it optional
+
   DeliveryDetails: { rideId: string };
   DeliveredSummary: { rideId: string };
   BankDetails: { rider: any; amount: string };

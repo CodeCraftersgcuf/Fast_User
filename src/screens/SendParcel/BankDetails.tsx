@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Modal } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
@@ -9,30 +7,91 @@ import type { SendParcelStackParamList } from "../../types/navigation"
 
 type BankDetailsNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "BankDetails">
 
+
+//Code Related to the Integration;
+import { useMutation } from "@tanstack/react-query"
+import { getFromStorage } from "../../utils/storage";
+import Loader from "../../components/Loader";
+import { postSenderBank } from "../../utils/mutations/accountMutations";
+
 interface BankDetailsProps {
   route: {
     params: {
       amount: string
-      rider: any
+      rider: any,
+      parcel_id?: any
     }
   }
 }
 
 export default function BankDetails({ route }: BankDetailsProps) {
   const navigation = useNavigation<BankDetailsNavigationProp>()
-  const { amount, rider } = route.params
-
-  const [isLoading, setIsLoading] = useState(false)
+  const { amount, rider, parcel_id } = route.params
+  const [token, setToken] = useState<string | null>(null); // State to hold the token
+  // const [isLoading, setIsLoading] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [amountFromAPI, setAmountFromAPI] = useState<string>("0");
+
+  console.log("The Parcel Id In the Bank From the Navigation.", parcel_id);
+
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const { mutate: submitBankDetails, isPending: isLoading } = useMutation({
+    mutationFn: (data: {
+      id: number;
+      data: {
+        account_number: string;
+        account_name: string;
+        bank_name: string;
+      };
+      token: string;
+    }) => postSenderBank(data),
+
+    onSuccess: (res) => {
+      console.log("✅ Sender Bank Success:", res);
+      setShowConfirmation(true);
+      setAmountFromAPI(res.data.amount); // Save the actual amount from response
+    },
+    onError: (err) => {
+      console.error("❌ Error posting sender bank:", err);
+    },
+  });
+
+
+  // const handlePaymentMade = () => {
+  //   setIsLoading(true)
+  //   // Simulate payment verification
+  //   setTimeout(() => {
+  //     setIsLoading(false)
+  //     setShowConfirmation(true)
+  //   }, 2000)
+  // }
 
   const handlePaymentMade = () => {
-    setIsLoading(true)
-    // Simulate payment verification
-    setTimeout(() => {
-      setIsLoading(false)
-      setShowConfirmation(true)
-    }, 2000)
-  }
+  setShowConfirmation(true);
+};
+  useEffect(() => {
+    if (token && parcel_id) {
+      submitBankDetails({
+        id: parcel_id,
+        token,
+        data: {
+          account_name: "Fast Logistics",
+          account_number: "123456789",
+          bank_name: "VFB Microfinance Bank",
+        },
+      });
+    }
+  }, [token]);
 
   const handleConfirm = () => {
     setShowConfirmation(false)
@@ -40,6 +99,8 @@ export default function BankDetails({ route }: BankDetailsProps) {
       rider,
       amount,
       paymentStatus: "success",
+      parcel_id,
+      navigateTo: "RideDetails",
     })
   }
 

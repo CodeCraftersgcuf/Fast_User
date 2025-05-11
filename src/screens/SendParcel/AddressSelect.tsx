@@ -77,42 +77,61 @@ export default function AddressSelect() {
   if (isLoading) {
     return <Loader />
   }
-  return (
-    <BottomSheet isVisible onClose={handleClose} title={`${type === "home" ? "Home" : "Work"} Address`}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        {fetchedAddresses?.data?.map((address, index) => (
-          <TouchableOpacity
-            key={address.id}
-            style={[styles.addressCard, selectedAddress === address.id && styles.selectedCard]}
-            onPress={() => handleAddressSelect(address)}
-          >
-            <View style={styles.addressHeader}>
-              <View style={styles.addressLabelContainer}>
-                <Icon name={type === "home" ? "home" : "business"} size={20} color={colors.primary} />
-                <Text style={styles.addressLabel}>{`Address ${index + 1}`}</Text>
-              </View>
-              <View style={[styles.radioButton, selectedAddress === address.id && styles.radioButtonSelected]}>
-                {selectedAddress === address.id && <View style={styles.radioButtonInner} />}
-              </View>
-            </View>
+  const filteredAddresses = fetchedAddresses?.data?.filter(
+    (address) => address.type?.toLowerCase() === type.toLowerCase()
+  );
 
-            <View style={styles.addressDetails}>
-              <View style={styles.addressRow}>
-                <View style={styles.addressField}>
-                  <Text style={styles.fieldLabel}>City</Text>
-                  <Text style={styles.fieldValue}>{address.city}</Text>
+  return (
+    <BottomSheet
+      isVisible
+      onClose={handleClose}
+      title={`${type === "home" ? "Home" : "Work"} Address`}
+    >
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        {filteredAddresses?.length > 0 ? (
+          filteredAddresses.map((address, index) => (
+            <TouchableOpacity
+              key={address.id}
+              style={[styles.addressCard, selectedAddress === address.id && styles.selectedCard]}
+              onPress={() => handleAddressSelect(address)}
+            >
+              <View style={styles.addressHeader}>
+                <View style={styles.addressLabelContainer}>
+                  <Icon name={type === "home" ? "home" : "business"} size={20} color={colors.primary} />
+                  <Text style={styles.addressLabel}>{`Address ${index + 1}`}</Text>
                 </View>
-                <View style={styles.addressField}>
-                  <Text style={styles.fieldLabel}>Address</Text>
-                  <Text style={styles.fieldValue}>{address.address}</Text>
+                <View style={[styles.radioButton, selectedAddress === address.id && styles.radioButtonSelected]}>
+                  {selectedAddress === address.id && <View style={styles.radioButtonInner} />}
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+
+              <View style={styles.addressDetails}>
+                <View style={styles.addressRow}>
+                  <View style={styles.addressField}>
+                    <Text style={styles.fieldLabel}>City</Text>
+                    <Text style={styles.fieldValue}>{address.city}</Text>
+                  </View>
+                  <View style={styles.addressField}>
+                    <Text style={styles.fieldLabel}>Address</Text>
+                    <Text style={styles.fieldValue}>{address.address}</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={{ padding: 16, alignItems: "center", marginTop: 20 }}>
+            <Text style={{ textAlign: "center", fontSize: 14, color: "#888" }}>
+              You have not added any saved {type === "home" ? "Home" : "Work"} address yet.{"\n"}
+              Go to <Text style={{ fontWeight: "bold" }}>Settings → Address</Text> to add one.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </BottomSheet>
   );
+
+
 }
 
 const styles = StyleSheet.create({

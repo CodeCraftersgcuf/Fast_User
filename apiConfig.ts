@@ -12,7 +12,7 @@ const API_ENDPOINTS = {
     ResetPassword: API_DOMAIN + "/auth/user/reset-password",
   },
   PARCEL: {
-    ParcelList: API_DOMAIN + "/sendparcel/list",
+    ParcelList: API_DOMAIN + "/history/user",
     CreateParcelStep1: API_DOMAIN + "/sendparcel/create-step-one",
 
     // These require a dynamic ID
@@ -44,9 +44,17 @@ const API_ENDPOINTS = {
     WalletTopup: API_DOMAIN + "/wallet/add-payment",
     AccountDetail: API_DOMAIN + "/wallet/virtual-account/generate",
 
+    AcceptBid: (id: number | string) => `${API_DOMAIN}/parcel-bid/accept/${id}`,
+
+    ParcelDetail: (id: number | string) =>
+      `${API_DOMAIN}/sendparcel/details/${id}`,
+
     EditProfile: API_DOMAIN + "/user/update-profile",
 
     DeliveryHistory: API_DOMAIN + "/history/user",
+
+    SenderBank: (id: number | string) =>
+      `${API_DOMAIN}/sendparcel/pay-by-bank-sender/${id}`,
 
     GetFaqs: API_DOMAIN + "/faqs/user",
 

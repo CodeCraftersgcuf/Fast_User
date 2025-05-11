@@ -8,18 +8,60 @@ import { useOrder } from "../../contexts/OrderContext"
 
 type RideSummaryNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "RideSummary">
 
+//Code related to the integration
+import { useMutation } from "@tanstack/react-query"
+import { getFromStorage } from "../../utils/storage";
+import { acceptBid } from "../../utils/mutations/accountMutations"
+import Toast from "react-native-toast-message";
+
+
 export default function RidesSummary({
   route,
-}: { route: { params: { rider: any; amount: string; paymentStatus?: string } } }) {
+}: { route: { params: { rider: any; amount: string; paymentStatus?: string; bidId: string, parcel_id: string, navigateTo?: string } } }) {
   const navigation = useNavigation<RideSummaryNavigationProp>()
-  const { rider, amount, paymentStatus } = route.params
+  const { rider, amount, paymentStatus, bidId, parcel_id, navigateTo } = route.params
   const { deliveryDetails } = useOrder();
-
+  const [token, setToken] = useState<string | null>(null);
   console.log("Delivery Details: ", rider);
+  console.log("Bid Id: ", bidId);
+  console.log("Parcel Idx: ", parcel_id);
+
+  console.log("The Optional Navigate To: ", navigateTo);
 
   const [isDeliverySummaryExpanded, setIsDeliverySummaryExpanded] = useState(true)
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
   const [paymentComplete, setPaymentComplete] = useState(false)
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const { mutate: acceptBidMutation } = useMutation({
+    mutationFn: (bidId: string) => acceptBid(bidId, token),
+    onSuccess: (data) => {
+      console.log("✅ Bid accepted successfully:", data);
+      Toast.show({
+        type: "success",
+        text1: "Bid accepted successfully",
+      });
+      setShowConfirmationModal(true); // Show the success modal
+    },
+    onError: (error: any) => {
+      console.error("❌ Error accepting bid:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to accept bid",
+        text2: error?.response?.data?.message || "Something went wrong",
+      });
+    },
+  });
+
 
   useEffect(() => {
     if (paymentStatus === "success") {
@@ -28,19 +70,38 @@ export default function RidesSummary({
   }, [paymentStatus])
 
   const handleProceed = () => {
-    // If payment is required but not completed, navigate to bank details
-    if (deliveryDetails.paymentMethod === "bank_transfer" && !paymentComplete && deliveryDetails.payer === "sender") {
-      navigation.navigate("BankDetails", { rider, amount })
-      return
+    if (navigateTo === "RideDetails") {
+      handleTrackRider();
     }
 
-    // Otherwise show confirmation modal
-    setShowConfirmationModal(true)
-  }
+    acceptBidMutation(bidId, {
+      onSuccess: () => {
+        if (
+          deliveryDetails.paymentMethod === "bank_transfer" &&
+          !paymentComplete &&
+          deliveryDetails.payer === "sender"
+        ) {
+          navigation.navigate("BankDetails", { rider, amount, parcel_id });
+        } else {
+          setShowConfirmationModal(true);
+        }
+      },
+      onError: (error: any) => {
+        Toast.show({
+          type: "error",
+          text1: "Failed to accept bid",
+          text2: error?.response?.data?.message || "Please try again later",
+        });
+      },
+    });
+  };
+
+
 
   const handleTrackRider = () => {
     setShowConfirmationModal(false)
-    navigation.navigate("RideHistory")
+    navigation.navigate("RideHistory", { parcel_id });
+
   }
 
   // Format the amount for display
@@ -208,7 +269,7 @@ export default function RidesSummary({
         <View style={styles.riderCard}>
           <View style={styles.riderInfo}>
             <Image
-              source={rider.image?.uri ? rider.image : rider.image }
+              source={rider.image?.uri ? rider.image : rider.image}
               style={styles.riderImage}
             />
             <View style={styles.riderDetails}>
@@ -272,6 +333,7 @@ export default function RidesSummary({
           </View>
         </View>
       </Modal>
+      <Toast /> {/* 👈 Add this at the end */}
     </SafeAreaView>
   )
 }

@@ -22,6 +22,8 @@ import Toast from "react-native-toast-message";
 import Loader from "../../components/Loader"
 import { getFromStorage } from "../../utils/storage";
 import { useQueryClient } from "@tanstack/react-query";
+import { useIsFocused } from "@react-navigation/native";
+
 
 interface SavedAddress {
   id: string
@@ -50,21 +52,22 @@ export default function AddressScreen({
   const [city, setCity] = useState("")
   const [state, setState] = useState("")
 
-
+  const isFocused = useIsFocused();
   const queryClient = useQueryClient();
 
 
-useEffect(() => {
-  if (route.params?.section === "Home" || route.params?.section === "Work") {
-    setActiveTab(route.params.section);
-    setShowSavedAddresses(true);
-  }
-}, [route.params?.section]);
+  useEffect(() => {
+    if (route.params?.section === "Home" || route.params?.section === "Work") {
+      setActiveTab(route.params.section);
+      setShowSavedAddresses(true);
+    }
+  }, [route.params?.section]);
 
   const { data: addressList, isLoading: addressListLoading } = useQuery({
     queryKey: ["addressList", token],
     queryFn: () => getAddressList(token),
     enabled: !!token, // Only run the query if token is available
+    refetchInterval: isFocused ? 1000 : false, // ✅ Stop polling when not focused
   })
   const { mutate: createAddressMutation } = useMutation({
     mutationFn: createAddress,

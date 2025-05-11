@@ -452,6 +452,8 @@ export function Navigation() {
       "DeliveredSummary",
       "ChatRoomScreen",
       "AddressScreen",
+      "BankDetails",
+      
 
 
 
