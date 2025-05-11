@@ -1,7 +1,3 @@
-
-
-"use client"
-
 import { useState, useEffect } from "react"
 import {
   View,
@@ -25,25 +21,132 @@ import pp from "../../../assets/pp.png"
 
 type RideDetailsNavigationProp = NativeStackNavigationProp<SendParcelStackParamList, "RideDetails">
 
-export default function RideDetails({ route }: { route: { params: { rideId: string } } }) {
+
+//Code Related to the Integration;
+import { useQuery } from "@tanstack/react-query"
+import { getParcelDetail } from "../../../utils/queries/accountQueries";
+import { getFromStorage } from "../../../utils/storage";
+import Loader from "../../../components/Loader";
+import { openLocationCode } from "open-location-code";
+import { geocodeAddress } from "../../../utils/geocode"; // import the helper above
+import { getRiderLocation } from "../../../utils/queries/accountQueries";
+import axios from "axios";
+import polyline from "@mapbox/polyline";
+
+
+export default function RideDetails({ route }: { route: { params: { rideId: string, parcel?: string } } }) {
   const navigation = useNavigation<RideDetailsNavigationProp>()
-  const { rideId } = route.params
+  const { rideId, parcel } = route.params
+  const [token, setToken] = useState<string | null>(null);
+
+  console.log("This is the Map Screen", rideId, parcel?.id);
 
   // State variables
   const [deliveryStatus, setDeliveryStatus] = useState<"In Transit" | "Delivered">("In Transit")
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
   const [confirmationCode, setConfirmationCode] = useState("")
   const [showCustomerCode, setShowCustomerCode] = useState(false)
-  const [showInputCodeButton, setShowInputCodeButton] = useState(true)
+  const [showInputCodeButton, setShowInputCodeButton] = useState(true);
+  const [routePolyline, setRoutePolyline] = useState<{ latitude: number; longitude: number }[]>([]);
+  const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || "YOUR_API_KEY";
 
+
+  // For map coordinates
+  const [origin, setOrigin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [destination, setDestination] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (origin && destination) {
+        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+        console.log("Fetching route from Google Directions API:", url);
+        try {
+          const res = await axios.get(url);
+          console.log("Directions API response:", res.data);
+          const routes = res.data.routes;
+          if (routes && routes.length > 0 && routes[0].overview_polyline?.points) {
+            const points = routes[0].overview_polyline.points;
+            console.log("overview_polyline.points:", points);
+            const decoded = polyline.decode(points);
+            console.log("Decoded polyline:", decoded);
+            if (decoded.length >= 2) {
+              const polylineCoords = decoded.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+              setRoutePolyline(polylineCoords);
+              console.log("Set routePolyline:", polylineCoords);
+            } else {
+              setRoutePolyline([]);
+              console.warn("Google Directions API returned a route with less than 2 points.");
+            }
+          } else {
+            setRoutePolyline([]);
+            console.warn("No route found from Google Directions API.");
+          }
+        } catch (e) {
+          setRoutePolyline([]);
+          console.warn("Failed to fetch route from Google Directions API.", e);
+        }
+      }
+    };
+    fetchRoute();
+  }, [origin, destination]);
+  // Fetch parcel details
+  const { data: parcelData, isLoading: parcelLoading } = useQuery({
+    queryKey: ["parcelDetails", token],
+    queryFn: () => getParcelDetail(parcel?.id, token),
+    enabled: !!token, // Only run the query if token is available
+  });
+  console.log("🔹 Parcel Data:", parcelData);
+
+  const { data: riderLocationData, isLoading: riderLoading } = useQuery({
+    queryKey: ["riderLocation", parcelData?.data?.rider_id],
+    queryFn: () => getRiderLocation(parcelData?.data?.rider_id, token!),
+    enabled: !!token && !!parcelData?.data?.rider_id,
+    refetchInterval: 5000, // Refetch every 5 seconds
+  });
   // Route coordinates for the map
-  const routeCoordinates = [
-    { latitude: 6.9075, longitude: 3.252 }, // Sender location (example coordinates)
-    { latitude: 6.91, longitude: 3.255 },
-    { latitude: 6.9125, longitude: 3.258 },
-    { latitude: 6.915, longitude: 3.261 },
-    { latitude: 6.9175, longitude: 3.264 }, // Receiver location (example coordinates)
-  ]
+  // Convert Plus Code and geocode address when data is loaded
+  useEffect(() => {
+    // Set destination from receiver_coordinates in parcelData
+    if (parcelData?.data?.receiver_coordinates) {
+      setDestination({
+        latitude: parcelData.data.receiver_coordinates.lat,
+        longitude: parcelData.data.receiver_coordinates.lng,
+      });
+    }
+
+    // Set origin from riderLocationData (live) if available, else from sender_coordinates
+    if (riderLocationData?.data?.latitude && riderLocationData?.data?.longitude) {
+      setOrigin({
+        latitude: parseFloat(riderLocationData.data.latitude),
+        longitude: parseFloat(riderLocationData.data.longitude),
+      });
+    } else if (parcelData?.data?.sender_coordinates) {
+      setOrigin({
+        latitude: parcelData.data.sender_coordinates.lat,
+        longitude: parcelData.data.sender_coordinates.lng,
+      });
+    }
+  }, [parcelData, riderLocationData]);
+
+
+  const isValidCoordinate = (coord: any) =>
+    coord && typeof coord.latitude === "number" && !isNaN(coord.latitude) && typeof coord.longitude === "number" && !isNaN(coord.longitude);
+
+  const routeCoordinates =
+    isValidCoordinate(origin) && isValidCoordinate(destination)
+      ? [origin, destination]
+      : null;
+
 
   // Blinking cursor animation
   const cursorOpacity = useState(new Animated.Value(1))[0]
@@ -97,9 +200,11 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
   const handleDeliveryDetails = () => {
     navigation.navigate("DeliveredSummary", { rideId })
   }
+  if (parcelLoading) return <Loader />;
 
   return (
     <SafeAreaView style={styles.container}>
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="chevron-back" size={24} color="#000000" />
@@ -122,28 +227,38 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
           )}
 
           <View style={styles.mapContainer}>
-            <MapView
-              provider={PROVIDER_GOOGLE}
-              style={styles.map}
-              initialRegion={{
-                latitude: 6.9125,
-                longitude: 3.258,
-                latitudeDelta: 0.02,
-                longitudeDelta: 0.02,
-              }}
-            >
-              <Polyline coordinates={routeCoordinates} strokeColor="#800080" strokeWidth={4} />
-              <Marker coordinate={routeCoordinates[0]}>
-                <View style={styles.originMarker}>
-                  <Icon name="location" size={24} color="#00A651" />
-                </View>
-              </Marker>
-              <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]}>
-                <View style={styles.destinationMarker}>
-                  <Icon name="location" size={24} color="#FF0000" />
-                </View>
-              </Marker>
-            </MapView>
+            {routeCoordinates ? (
+              <MapView
+                provider={PROVIDER_GOOGLE}
+                style={styles.map}
+                initialRegion={{
+                  latitude: routeCoordinates[0].latitude,
+                  longitude: routeCoordinates[0].longitude,
+                  latitudeDelta: 0.02,
+                  longitudeDelta: 0.02,
+                }}
+              >
+                {/* Only draw the polyline if we have a decoded route from Google with at least 2 points */}
+                {routePolyline.length >= 2 && (
+                  <Polyline coordinates={routePolyline} strokeColor="#800080" strokeWidth={4} />
+                )}
+                <Marker coordinate={routeCoordinates[0]}>
+                  <View style={styles.originMarker}>
+                    <Icon name="location" size={24} color="#00A651" />
+                  </View>
+                </Marker>
+                <Marker coordinate={routeCoordinates[1]}>
+                  <View style={styles.destinationMarker}>
+                    <Icon name="location" size={24} color="#FF0000" />
+                  </View>
+                </Marker>
+              </MapView>
+            ) : (
+              <Text style={{ textAlign: "center", padding: 10, color: "gray" }}>
+                Rider or receiver location unavailable.
+              </Text>
+            )}
+
             <View style={[styles.statusBadge, deliveryStatus === "Delivered" && styles.deliveredStatusBadge]}>
               <Text style={styles.statusText}>{deliveryStatus}</Text>
             </View>
@@ -156,25 +271,25 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
 
           <View style={styles.orderIdContainer}>
             <Text style={styles.orderIdLabel}>Order id</Text>
-            <Text style={styles.orderId}>ORD-12ESCJK3K</Text>
+            <Text style={styles.orderId}>ORD-{parcelData?.data?.id ?? "N/A"}</Text>
           </View>
 
           <View style={styles.detailsSection}>
             <View style={styles.addressColumns}>
               <View style={styles.addressColumn}>
                 <Text style={styles.addressLabel}>From</Text>
-                <Text style={styles.addressValue}>No 1, abcd street....</Text>
+                <Text style={styles.addressValue}>{parcelData?.data?.sender_address ?? "N/A"}</Text>
               </View>
               <View style={styles.addressColumn}>
                 <Text style={styles.addressLabel}>To</Text>
-                <Text style={styles.addressValue}>No 1, abcd street, saki.....</Text>
+                <Text style={styles.addressValue}>{parcelData?.data?.receiver_address ?? "N/A"}</Text>
               </View>
             </View>
 
             <View style={styles.timeColumns}>
               <View style={styles.timeColumn}>
                 <Text style={styles.timeLabel}>Time of Order</Text>
-                <Text style={styles.timeValue}>11:24 AM</Text>
+                <Text style={styles.timeValue}>{new Date(parcelData?.data?.ordered_at).toLocaleTimeString() ?? "N/A"}</Text>
               </View>
               <View style={styles.timeColumn}>
                 <Text style={styles.timeLabel}>Estimated Delivery</Text>
@@ -189,7 +304,7 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
               </View>
               <View style={styles.paymentColumn}>
                 <Text style={styles.paymentLabel}>Payment method</Text>
-                <Text style={styles.paymentValue}>Wallet</Text>
+                <Text style={styles.paymentValue}>{parcelData?.data?.payment_method ?? "N/A"}</Text>
               </View>
             </View>
           </View>
@@ -236,12 +351,16 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
 
           <View style={styles.riderSection}>
             <Image
-              source={pp}
+              source={{
+                uri: parcelData?.data?.accepted_bid?.rider?.profile_picture
+                  ? `https://fastlogistic.hmstech.xyz/storage/${parcelData?.data?.accepted_bid?.rider?.profile_picture}`
+                  : "https://your-default-placeholder.jpg",
+              }}
               style={styles.riderImage}
               defaultSource={{ uri: "/placeholder.svg?height=50&width=50" }}
             />
             <View style={styles.riderInfo}>
-              <Text style={styles.riderName}>Maleek Oladimeji</Text>
+              <Text style={styles.riderName}>{parcelData?.data?.accepted_bid?.rider?.name ?? "N/A"}</Text>
               <View style={styles.ratingContainer}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Icon key={star} name="star" size={14} color="#800080" />
@@ -696,7 +815,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 200,
     zIndex: 1000
-    
+
   },
   confirmationModalHeader: {
     flexDirection: "row",

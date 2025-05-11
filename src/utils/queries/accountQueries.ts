@@ -84,6 +84,18 @@ export const getUserDeiliveryHistory = async (token: string): Promise<any> => {
   );
 };
 
+export const getRiderLocation = async (
+  id: number | string,
+  token: string
+): Promise<any> => {
+  return await apiCall(
+    API_ENDPOINTS.USER.RiderLocation(id), // ✅ dynamic URL with id
+    "GET",
+    undefined,
+    token
+  );
+};
+
 export const getAddressList = async (token: string): Promise<any> => {
   return await apiCall(API_ENDPOINTS.USER.ListAddress, "GET", undefined, token);
 };

@@ -24,6 +24,14 @@ interface ActiveDeliveriesProps {
   deliveries: DeliveryItem[];
 }
 
+//Code Related to the Integration;
+import { useQuery } from "@tanstack/react-query"
+import { getParcelList } from "../../utils/queries/accountQueries";
+import { getFromStorage } from "../../utils/storage";
+import Loader from "../../components/Loader";
+
+
+
 const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
   const navigation = useNavigation();
 
@@ -35,7 +43,6 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
   const handleDeliveryPress = (delivery: DeliveryItem) => {
     console.log("Delivery ID:", delivery.id);
     navigation.navigate("DeliveryDetails", { delivery: delivery })
-
   }
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (
     <TouchableOpacity style={styles.deliveryCard} onPress={() => handleDeliveryPress(item)}>

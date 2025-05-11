@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -54,15 +53,112 @@ type DeliveryDetailsRouteProp = RouteProp<
   },
   "DeliveryDetails"
 >;
+//Code Related to the Integration;
+import { useQuery } from "@tanstack/react-query"
+import { getParcelDetail, getRiderLocation } from "../../../utils/queries/accountQueries";
+import { getFromStorage } from "../../../utils/storage";
+import Loader from "../../../components/Loader";
+import axios from "axios";
+import polyline from "@mapbox/polyline";
+import { GOOGLE_MAPS_API_KEY } from "@env";
+
 
 export default function DeliveryDetails() {
-
   const navigation = useNavigation();
-  const route = useRoute<DeliveryDetailsRouteProp>();
+  const route = useRoute();
+  const [token, setToken] = useState<string | null>(null);
+  const [origin, setOrigin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [destination, setDestination] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [routePolyline, setRoutePolyline] = useState<{ latitude: number; longitude: number }[]>([]);
+  const GOOGLE_KEY = GOOGLE_MAPS_API_KEY;
 
-  const { delivery } = route.params;
-  console.log("Delivery Details:", delivery);
-  if (!delivery) {
+  console.log("The Google Api", GOOGLE_KEY);
+  // Get parcelId from route params
+  const parcelId = route.params?.delivery?.id;
+  // Fetch token
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const fetchedToken = await getFromStorage("authToken");
+      setToken(fetchedToken);
+      console.log("🔹 Retrieved Token:", fetchedToken);
+    };
+    fetchUserData();
+  }, []);
+
+  // Fetch parcel details
+  const { data: parcelData, isLoading: parcelLoading } = useQuery({
+    queryKey: ["parcelDetails", token, parcelId],
+    queryFn: () => getParcelDetail(parcelId, token),
+    enabled: !!token && !!parcelId,
+  });
+  // Fetch rider location
+  const riderId = parcelData?.data?.rider_id;
+  const { data: riderLocationData, isLoading: riderLoading } = useQuery({
+    queryKey: ["riderLocation", riderId],
+    queryFn: () => getRiderLocation(riderId, token!),
+    enabled: !!token && !!riderId,
+    refetchInterval: 5000,
+  });
+
+  // Set origin/destination from API data
+  useEffect(() => {
+    if (parcelData?.data?.receiver_coordinates) {
+      setDestination({
+        latitude: parcelData.data.receiver_coordinates.lat,
+        longitude: parcelData.data.receiver_coordinates.lng,
+      });
+    }
+    if (riderLocationData?.data?.latitude && riderLocationData?.data?.longitude) {
+      setOrigin({
+        latitude: parseFloat(riderLocationData.data.latitude),
+        longitude: parseFloat(riderLocationData.data.longitude),
+      });
+    } else if (parcelData?.data?.sender_coordinates) {
+      setOrigin({
+        latitude: parcelData.data.sender_coordinates.lat,
+        longitude: parcelData.data.sender_coordinates.lng,
+      });
+    }
+  }, [parcelData, riderLocationData]);
+
+  // Fetch Google Directions API polyline
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (origin && destination) {
+        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=${GOOGLE_KEY}`;
+        console.log("Fetching route from Google Directions API:", url);
+        try {
+          const res = await axios.get(url);
+          console.log("Directions API response:", res.data);
+          const routes = res.data.routes;
+          if (routes && routes.length > 0 && routes[0].overview_polyline?.points) {
+            const points = routes[0].overview_polyline.points;
+            console.log("overview_polyline.points:", points);
+            const decoded = polyline.decode(points);
+            console.log("Decoded polyline:", decoded);
+            if (decoded.length >= 2) {
+              const polylineCoords = decoded.map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+              setRoutePolyline(polylineCoords);
+              console.log("Set routePolyline:", polylineCoords);
+            } else {
+              setRoutePolyline([]);
+              console.warn("Google Directions API returned a route with less than 2 points.");
+            }
+          } else {
+            setRoutePolyline([]);
+            console.warn("No route found from Google Directions API.");
+          }
+        } catch (e) {
+          setRoutePolyline([]);
+          console.warn("Failed to fetch route from Google Directions API.", e);
+        }
+      }
+    };
+    fetchRoute();
+  }, [origin, destination]);
+
+  if (parcelLoading) return <Loader />;
+  if (!parcelData?.data) {
     return (
       <SafeAreaView style={styles.container}>
         <Text style={{ textAlign: "center", marginTop: 50, fontSize: 16 }}>
@@ -71,54 +167,53 @@ export default function DeliveryDetails() {
       </SafeAreaView>
     );
   }
+
+  const parcel = parcelData.data;
+  const rider = parcel.accepted_bid?.rider;
+  const routeCoordinates = routePolyline.length >= 2 ? routePolyline : (
+    origin && destination ? [origin, destination] : []
+  );
+
+  // Helper to format date/time
+  const formatDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString() : "";
+  const formatTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString() : "";
+
   const timelineData: TimelineItem[] = [
     {
-      date: "Feb 23",
-      time: "01:23 AM",
+      date: formatDate(parcel.ordered_at),
+      time: formatTime(parcel.ordered_at),
       text: "User ordered a delivery",
-      location: "Iseyin, Oyo state",
-      isCompleted: true,
+      location: parcel.sender_address,
+      isCompleted: !!parcel.ordered_at,
     },
     {
-      date: "Feb 23",
-      time: "01:23 AM",
+      date: formatDate(parcel.picked_up_at),
+      time: formatTime(parcel.picked_up_at),
       text: "Package picked up",
-      location: "Iseyin, Oyo state",
-      isCompleted: true,
+      location: parcel.sender_address,
+      isCompleted: !!parcel.picked_up_at,
     },
     {
-      date: "Feb 23",
-      time: "01:23 AM",
+      date: formatDate(parcel.in_transit_at),
+      time: formatTime(parcel.in_transit_at),
       text: "Package in transit",
-      location: "Iseyin, Oyo state",
-      isCompleted: false,
+      location: parcel.sender_address,
+      isCompleted: !!parcel.in_transit_at,
     },
     {
-      date: "Feb 23",
-      time: "01:23 AM",
+      date: formatDate(parcel.delivered_at),
+      time: formatTime(parcel.delivered_at),
       text: "Package delivered",
-      location: "Iseyin, Oyo state",
-      isCompleted: false,
+      location: parcel.receiver_address,
+      isCompleted: !!parcel.delivered_at,
     },
-  ];
-
-  const routeCoordinates = [
-    { latitude: 40.7359, longitude: -73.9911 },
-    { latitude: 40.742, longitude: -73.9885 },
-    { latitude: 40.7484, longitude: -73.9857 },
-    { latitude: 40.755, longitude: -73.981 },
-    { latitude: 40.7616, longitude: -73.9773 },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        {/* <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.navigate("RideDetailsMap")}
-        >
-          <Icon name={icons.back} size={24} color={colors.text.primary} />
-        </TouchableOpacity> */}
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
@@ -135,34 +230,40 @@ export default function DeliveryDetails() {
             provider={PROVIDER_GOOGLE}
             style={styles.map}
             initialRegion={{
-              latitude: 40.7484,
-              longitude: -73.9857,
-              latitudeDelta: 0.05,
-              longitudeDelta: 0.05,
+              latitude: routeCoordinates[0]?.latitude || 31.4146583,
+              longitude: routeCoordinates[0]?.longitude || 73.0699726,
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
             }}
           >
-            <Polyline
-              coordinates={routeCoordinates}
-              strokeColor="#9C27B0"
-              strokeWidth={4}
-              lineDashPattern={[1]}
-              lineCap="round"
-              lineJoin="round"
-            />
-            <Marker coordinate={routeCoordinates[0]}>
-              <View style={styles.markerContainer}>
-                <View style={[styles.markerOuter, styles.markerOuterStart]}>
-                  <View style={[styles.markerInner, styles.markerInnerStart]} />
+            {routeCoordinates.length >= 2 && (
+              <Polyline
+                coordinates={routeCoordinates}
+                strokeColor="#9C27B0"
+                strokeWidth={4}
+                lineDashPattern={[1]}
+                lineCap="round"
+                lineJoin="round"
+              />
+            )}
+            {routeCoordinates[0] && (
+              <Marker coordinate={routeCoordinates[0]}>
+                <View style={styles.markerContainer}>
+                  <View style={[styles.markerOuter, styles.markerOuterStart]}>
+                    <View style={[styles.markerInner, styles.markerInnerStart]} />
+                  </View>
                 </View>
-              </View>
-            </Marker>
-            <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]}>
-              <View style={styles.markerContainer}>
-                <View style={[styles.markerOuter, styles.markerOuterEnd]}>
-                  <View style={[styles.markerInner, styles.markerInnerEnd]} />
+              </Marker>
+            )}
+            {routeCoordinates[routeCoordinates.length - 1] && (
+              <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]}>
+                <View style={styles.markerContainer}>
+                  <View style={[styles.markerOuter, styles.markerOuterEnd]}>
+                    <View style={[styles.markerInner, styles.markerInnerEnd]} />
+                  </View>
                 </View>
-              </View>
-            </Marker>
+              </Marker>
+            )}
           </MapView>
         </View>
 
@@ -172,34 +273,26 @@ export default function DeliveryDetails() {
               <View style={styles.profileInfo}>
                 <Image
                   source={
-                    delivery?.rider?.avatar
-                      ? typeof delivery.rider.avatar === "string"
-                        ? { uri: delivery.rider.avatar }
-                        : delivery.rider.avatar
-                      : imageSource // fallback image
+                    rider?.profile_picture
+                      ? { uri: `https://fastlogistic.hmstech.xyz/storage/${rider.profile_picture}` }
+                      : imageSource
                   }
                   style={styles.profileImage}
                 />
 
                 <View style={styles.nameRating}>
                   <Text style={styles.riderName}>
-                    {delivery?.rider?.name || "Rider Name"}
+                    {rider?.name || "Rider Name"}
                   </Text>
 
                   <View style={styles.ratingContainer}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Image
                         key={star}
-                        source={
-                          star <= (delivery?.rider?.rating || 0)
-                            ? icons.star
-                            : icons.starOutline
-                        }
+                        source={icons.star}
                         style={[
                           styles.iconTiny as ImageStyle,
-                          star <= (delivery?.rider?.rating || 0)
-                            ? styles.starFilled
-                            : styles.starOutline,
+                          styles.starFilled,
                         ]}
                       />
                     ))}
@@ -223,15 +316,15 @@ export default function DeliveryDetails() {
               </View>
             </View>
           </View>
-          
+
 
           <View style={styles.orderDetails}>
             <View style={styles.orderHeader}>
               <View>
                 <Text style={styles.orderLabel}>Order ID</Text>
-                <Text style={styles.orderId}>ORD-21JWD23JFEKNK2WNRK</Text>
+                <Text style={styles.orderId}>ORD-{parcel.id}</Text>
               </View>
-              <Text style={styles.statusText}>In-Transit</Text>
+              <Text style={styles.statusText}>{parcel.status}</Text>
             </View>
 
             <View style={styles.timeline}>

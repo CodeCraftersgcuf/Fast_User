@@ -178,6 +178,7 @@ const DeliveryHistory = () => {
       </View>
 
       {renderTabContent()}
+    
     </SafeAreaView>
   )
 }

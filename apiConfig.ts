@@ -56,6 +56,10 @@ const API_ENDPOINTS = {
     SenderBank: (id: number | string) =>
       `${API_DOMAIN}/sendparcel/pay-by-bank-sender/${id}`,
 
+   RiderLocation: (id: number | string) =>
+  `${API_DOMAIN}/rider/location/${id}`,
+
+
     GetFaqs: API_DOMAIN + "/faqs/user",
 
     SetPin: API_DOMAIN + "/user/set-pin",
