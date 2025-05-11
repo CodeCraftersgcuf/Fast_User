@@ -94,6 +94,15 @@ function SendParcelNavigator() {
         })}
       />
       <SendParcelStack.Screen
+        name="DeliveredHistory"
+        component={DeliveredHistory}
+        listeners={({ navigation }) => ({
+          focus: () => {
+            navigation.getParent()?.setParams({ hideTabBar: true })
+          },
+        })}
+      />
+      <SendParcelStack.Screen
         name="LocationSelect"
         component={LocationSelect}
         listeners={({ navigation }) => ({
@@ -255,6 +264,16 @@ function SendParcelNavigator() {
           },
         })}
       />
+         <SendParcelStack.Screen
+        name="AddressScreen"
+        component={AddressScreen}
+        listeners={({ navigation }) => ({
+          focus: () => {
+            navigation.getParent()?.setParams({ hideTabBar: true })
+          },
+        })}
+      />
+      
     </SendParcelStack.Navigator>
   )
 }
@@ -264,8 +283,10 @@ function SettingsNavigator() {
     <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
       <SettingsStack.Screen name="SettingsMain" component={SettingsScreen} />
       <SettingsStack.Screen name="Wallet" component={WalletScreen} />
+      <SettingsStack.Screen name="DeliveredHistory" component={DeliveredHistory} />
       <SettingsStack.Screen name="Support" component={SupportScreen} />
       <SettingsStack.Screen name="Address" component={AddressScreen} />
+      <SettingsStack.Screen name="AddressScreen" component={AddressScreen} />
       <SettingsStack.Screen name="MapSelect" component={MapSelect} />
       <SettingsStack.Screen name="Notifications" component={NotificationsScreen} />
       <SettingsStack.Screen name="FAQs" component={FAQsScreen} />
@@ -430,6 +451,7 @@ export function Navigation() {
       "RidesDetails",
       "DeliveredSummary",
       "ChatRoomScreen",
+      "AddressScreen",
 
 
 

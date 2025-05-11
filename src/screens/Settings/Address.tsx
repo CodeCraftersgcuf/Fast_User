@@ -32,10 +32,13 @@ interface SavedAddress {
   address: string
 }
 
-export default function AddressScreen() {
+export default function AddressScreen({
+  route,
+}: {
+  route: { params?: { section?: "Home" | "Work"; fromMap?: boolean; selectedAddress?: string } }
+}) {
   const navigation = useNavigation<AddressScreenNavigationProp>()
   const [token, setToken] = useState<string | null>(null); // State to hold the token
-
   const [addressType, setAddressType] = useState<AddressType>("Home")
   const [searchText, setSearchText] = useState("")
   const [showCategoryModal, setShowCategoryModal] = useState(false)
@@ -50,9 +53,13 @@ export default function AddressScreen() {
 
   const queryClient = useQueryClient();
 
-  const route = useRoute();
 
-
+useEffect(() => {
+  if (route.params?.section === "Home" || route.params?.section === "Work") {
+    setActiveTab(route.params.section);
+    setShowSavedAddresses(true);
+  }
+}, [route.params?.section]);
 
   const { data: addressList, isLoading: addressListLoading } = useQuery({
     queryKey: ["addressList", token],
@@ -208,20 +215,20 @@ export default function AddressScreen() {
     (address) => address.type.toLowerCase() === activeTab.toLowerCase()
   );
 
-// 📍 When coming from Address screen
-const handleMapPress = (type: "address" | "address") => {
-  navigation.replace("MapSelect", {
-    type,
-    from: "Address", // still passing correctly
-  });
-};
+  // 📍 When coming from Address screen
+  const handleMapPress = (type: "address" | "address") => {
+    navigation.replace("MapSelect", {
+      type,
+      from: "Address", // still passing correctly
+    });
+  };
 
   useEffect(() => {
     if (route.params?.fromMap && route.params?.selectedAddress) {
       setSearchText(route.params.selectedAddress);
     }
   }, [route.params]);
-  
+
   const renderAddressScreen = () => (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>

@@ -49,7 +49,7 @@ const DeliveryHistory = () => {
   const navigation = useNavigation<DeliveryHistoryNavigationProp>()
   const [token, setToken] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"Scheduled" | "Active" | "Delivered">("Delivered")
+  const [activeTab, setActiveTab] = useState<"Scheduled" | "Active" | "Delivered">("Active")
 
   const handleBack = () => {
     navigation.goBack()

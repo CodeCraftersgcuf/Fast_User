@@ -66,6 +66,7 @@ export default function User() {
       navigation.navigate("Add" as never);
     } else {
       console.log(`${action} pressed`);
+      navigation.navigate("Add", { screen: "DeliveredHistory" })
     }
   };
 
@@ -82,10 +83,15 @@ export default function User() {
     }
   }
 
-  const handleLocationPress = (type: string) => {
+  const handleLocationPress = (type: "Home" | "Work") => {
     console.log(`${type} location pressed`);
-    // Navigate to location selection
+
+    navigation.navigate("Add", {
+      screen: "AddressScreen",
+      params: { section: type },
+    });
   };
+
 
   const handleDeliveryPress = (orderId: string) => {
     console.log(`Delivery ${orderId} pressed`);
@@ -323,7 +329,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     gap: theme.spacing.lg,
-    justifyContent:'space-between',
+    justifyContent: 'space-between',
   },
   balanceAmount: {
     fontSize: 35,
