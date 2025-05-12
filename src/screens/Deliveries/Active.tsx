@@ -52,13 +52,46 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
   //   // Navigate to RideDetailsMap screen with the delivery ID
   //   navigation.navigate("RideDetailsMap", { deliveryId: delivery.id })
   // }
+  const STATUS_ORDER = ["ordered", "picked_up", "in_transit", "delivered"];
+  const STATUS_PICKED_UP = ["picked_up", "in_transit", "delivered"];
+  const STATUS_IN_TRANSIT = ["in_transit", "delivered"];
+  const STATUS_DELIVERED = ["delivered"];
 
+  // const isDotActive = (current: string, stage: string) => {
+  //   console.log("Current:", current, "Stage:", stage);
+  //   const stages = {
+  //     picked_up: STATUS_PICKED_UP,
+  //     in_transit: STATUS_IN_TRANSIT,
+  //     delivered: STATUS_DELIVERED,
+  //   };
+  //   return stages[stage]?.includes(current);
+  // };
+  const statusStages = ["Order", "picked_up", "in_transit", "Delivered"];
+
+  const getStatusIndex = (status: string) => statusStages.indexOf(status);
+
+  const isDotActive = (currentStatus: string, stage: string) => {
+    console.log("Current Status:", currentStatus, "Stage:", stage);
+    return getStatusIndex(currentStatus) >= getStatusIndex(stage);
+  };
+
+  const isLineActive = (currentStatus: string, nextStage: string) => {
+    console.log("Current Status:", currentStatus, "Next Stage:", nextStage,"for line");
+    return getStatusIndex(currentStatus) >= getStatusIndex(nextStage);
+  };
+  const isStepActive = (current: string, stage: string) => {
+    return isDotActive(current, stage) ? styles.activeLine : styles.inactiveLine;
+  };
   const handleDeliveryPress = (delivery: DeliveryItem) => {
     console.log("Delivery ID:", delivery.id);
     navigation.navigate("DeliveryDetails", { delivery: delivery })
   }
+  const handleRidePress = (delivery: DeliveryItem) => {
+    const selectedParcel = delivery;
+    navigation.navigate("RidesDetails", { rideId: delivery.id, parcel: selectedParcel });
+  }
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (
-    <TouchableOpacity style={styles.deliveryCard} onPress={() => handleDeliveryPress(item)}>
+    <TouchableOpacity style={styles.deliveryCard} onPress={() => handleRidePress(item)}>
       <View style={styles.deliveryHeader}>
         <Text style={styles.orderId}>{item.id}</Text>
         <View style={styles.statusBadge}>
@@ -89,44 +122,45 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
       </View>
 
       <View style={styles.progressContainer}>
+        {/* Step 1: Order */}
         <View style={styles.progressStep}>
-          <View style={[styles.progressDot, styles.activeDot]}>
-            <View style={styles.innerDot} />
+          <View style={[styles.progressDot, isDotActive(item.status, "order") ? styles.activeDot : styles.inactiveDot]}>
+            {isDotActive(item.status, "order") && <View style={styles.innerDot} />}
           </View>
           <Text style={styles.progressText}>Order</Text>
         </View>
 
-        <View style={[styles.progressLine, styles.activeLine]} />
+        <View style={[styles.progressLine, isLineActive(item.status, "picked_up") ? styles.activeLine : styles.inactiveLine]} />
 
+        {/* Step 2: Picked up */}
         <View style={styles.progressStep}>
-          <View style={[
-            styles.progressDot,
-            item.status !== "Order" ? styles.activeDot : styles.inactiveDot
-          ]}>
-            {item.status !== "Order" && <View style={styles.innerDot} />}
+          <View style={[styles.progressDot, isDotActive(item.status, "picked_up") ? styles.activeDot : styles.inactiveDot]}>
+            {isDotActive(item.status, "picked_up") && <View style={styles.innerDot} />}
           </View>
           <Text style={styles.progressText}>Picked up</Text>
         </View>
 
-        <View style={[styles.progressLine, item.status === "In transit" ? styles.activeLine : styles.inactiveLine]} />
+        <View style={[styles.progressLine, isLineActive(item.status, "in_transit") ? styles.activeLine : styles.inactiveLine]} />
 
+        {/* Step 3: In transit */}
         <View style={styles.progressStep}>
-          <View style={[
-            styles.progressDot,
-            item.status === "In transit" ? styles.activeDot : styles.inactiveDot
-          ]}>
-            {item.status === "In transit" && <View style={styles.innerDot} />}
+          <View style={[styles.progressDot, isDotActive(item.status, "in_transit") ? styles.activeDot : styles.inactiveDot]}>
+            {isDotActive(item.status, "in_transit") && <View style={styles.innerDot} />}
           </View>
           <Text style={styles.progressText}>In transit</Text>
         </View>
 
-        <View style={[styles.progressLine, styles.inactiveLine]} />
+        <View style={[styles.progressLine, isLineActive(item.status, "Delivered") ? styles.activeLine : styles.inactiveLine]} />
 
+        {/* Step 4: Delivered */}
         <View style={styles.progressStep}>
-          <View style={[styles.progressDot, styles.inactiveDot]} />
+          <View style={[styles.progressDot, isDotActive(item.status, "Delivered") ? styles.activeDot : styles.inactiveDot]}>
+            {isDotActive(item.status, "Delivered") && <View style={styles.innerDot} />}
+          </View>
           <Text style={styles.progressText}>Delivered</Text>
         </View>
       </View>
+
 
 
       <View style={styles.riderContainer}>
@@ -188,68 +222,68 @@ const ActiveDeliveries = ({ deliveries }: ActiveDeliveriesProps) => {
 
 const styles = StyleSheet.create({
   progressContainer: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "space-between",
-  marginBottom: 16,
-  padding:0,
-  position: "relative",
-},
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    padding: 0,
+    position: "relative",
+  },
 
-progressStep: {
-  flex: 1,
-  alignItems: "center",
-  zIndex: 2,
-},
+  progressStep: {
+    flex: 1,
+    alignItems: "center",
+    zIndex: 2,
+  },
 
-progressDot: {
-  width: 16,
-  height: 16,
-  borderRadius: 8,
-  borderWidth: 2,
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#fff",
-},
+  progressDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
 
-innerDot: {
-  width: 8,
-  height: 8,
-  borderRadius: 4,
-  backgroundColor: colors.primary,
-},
+  innerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
 
-activeDot: {
-  borderColor: colors.primary,
-},
+  activeDot: {
+    borderColor: colors.primary,
+  },
 
-inactiveDot: {
-  borderColor: "#ccc",
-},
+  inactiveDot: {
+    borderColor: "#ccc",
+  },
 
-progressLine: {
-  position: "absolute",
-  top: 7,
-  left: "10%",
-  width: "80%",
-  height: 2,
-  backgroundColor: "#E0E0E0",
-  zIndex: 1,
-},
+  progressLine: {
+    position: "absolute",
+    top: 7,
+    left: "10%",
+    width: "80%",
+    height: 2,
+    backgroundColor: "#E0E0E0",
+    zIndex: 1,
+  },
 
-activeLine: {
-  backgroundColor: colors.primary,
-},
+  activeLine: {
+    backgroundColor: colors.primary,
+  },
 
-inactiveLine: {
-  backgroundColor: "#E0E0E0",
-},
+  inactiveLine: {
+    backgroundColor: "#E0E0E0",
+  },
 
-progressText: {
-  fontSize: 10,
-  color: "#666666",
-  marginTop: 6,
-},
+  progressText: {
+    fontSize: 10,
+    color: "#666666",
+    marginTop: 6,
+  },
 
   // progressLine: {
   //   position: "absolute",
@@ -395,9 +429,9 @@ progressText: {
     // borderTopWidth: 1,
     backgroundColor: "#F2F2F2",
     paddingVertical: 16,
-    paddingHorizontal:10,
+    paddingHorizontal: 10,
     marginBottom: 16,
-    borderRadius:10
+    borderRadius: 10
   },
   riderAvatar: {
     width: 40,

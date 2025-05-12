@@ -83,6 +83,7 @@ const DeliveryHistory = () => {
     deliveryTime: "Scheduled",
     scheduledDate: item.scheduled_date,
     scheduledTime: item.scheduled_time,
+    amount: item.amount
   })) || [];
 
   const activeData: DeliveryItem[] = historyData?.data?.active?.map((item: any) => ({
@@ -144,7 +145,7 @@ const DeliveryHistory = () => {
 
       case "Delivered":
         return deliveredData.length > 0
-          ? <DeliveredDeliveries deliveries={deliveredData} />
+          ? <ActiveDeliveries deliveries={deliveredData} />
           : renderEmpty("No delivered orders found.");
 
       default:

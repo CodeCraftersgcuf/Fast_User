@@ -17,9 +17,11 @@
   lightgrey: '#FFFFFF80',
   text: {
     primary: '#333333',
-    secondary: '#666666',
+    secondary: '#00000080',
     light: '#999999',
   },
+  //background: #00000080;
+
   status: {
     success: '#4CAF50',
     warning: '#FFC107',

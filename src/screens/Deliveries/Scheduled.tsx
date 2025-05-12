@@ -16,6 +16,7 @@ interface DeliveryItem {
   deliveryTime: string;
   scheduledDate: string;
   scheduledTime: string;
+  amount: string;
 }
 
 interface ScheduledDeliveriesProps {
@@ -28,7 +29,17 @@ const ScheduledDeliveries = ({ deliveries }: ScheduledDeliveriesProps) => {
   const handleDeliveryPress = (delivery: DeliveryItem) => {
     navigation.navigate("DeliveryDetails", { delivery: delivery })
   };
+  const handlingProceed = (item: DeliveryItem) => {
+    console.log(item)
+    navigation.navigate("Add", {
+      screen: "RiderBid",
+      params: {
+        amount: item.amount,
+        parcel_id: item.id,
+      },
+    });
 
+  }
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (
     <TouchableOpacity style={styles.deliveryCard} onPress={() => handleDeliveryPress(item)}>
       <View style={styles.deliveryHeader}>
@@ -74,7 +85,7 @@ const ScheduledDeliveries = ({ deliveries }: ScheduledDeliveriesProps) => {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.proceedButton}>
+      <TouchableOpacity style={styles.proceedButton} onPress={() => handlingProceed(item)}>
         <Text style={styles.proceedButtonText}>Proceed</Text>
       </TouchableOpacity>
     </TouchableOpacity>

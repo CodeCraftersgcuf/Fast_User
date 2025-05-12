@@ -17,7 +17,10 @@ import { RiderProfile } from "../../../components/RiderProfile";
 import { colors } from "../../../constants/colors";
 import { theme } from "../../../constants/theme";
 import { icons } from "../../../constants/icons";
-import { useNavigation } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { Parcel } from "../../../types/parcel";
+import { ContactReceiverPopup } from "../../../components/ContactReceiverPopup";
+import { RatingModal } from "../../../components/Delivery/RatingModal";
 
 const deliveryDetails = {
   senderInfo: [
@@ -40,22 +43,99 @@ const deliveryDetails = {
     { label: "Delivery", value: "N2,000" },
   ],
 };
-
+type RouteParams = {
+  RideSummary: {
+    parcel: Parcel;
+  };
+}
 export default function RideSummary() {
   const [isDeliverySummaryExpanded, setIsDeliverySummaryExpanded] =
     useState(true);
-
+  // const [selectedDelivery, setSelectedDelivery] = useState<Parcel | null>(null);
+  const [showContactModel, setShowContactModel] = useState(false)
+  const route = useRoute<RouteProp<RouteParams, "RideSummary">>();
+  const { parcel } = route.params;
   const navigation = useNavigation();
-
+  console.log("Parcel:", parcel);
   const senderAddress =
     "No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo";
   const receiverAddress =
     "No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo";
+  const senderInfo = [
+    { label: "Sender Name", value: parcel.sender_name },
+    { label: "Sender Phone", value: parcel.sender_phone },
+    { label: "Receiver Name", value: parcel.receiver_name },
+    { label: "Receiver Phone", value: parcel.receiver_phone },
+    { label: "Parcel Name", value: parcel.parcel_name },
+    { label: "Parcel Category", value: parcel.parcel_category },
+    { label: "Parcel Value", value: `₦${Number(parcel.parcel_value).toLocaleString()}` },
+    { label: "Description", value: parcel.description || "N/A" },
+  ]
+  const paymentInfo = [
+    {
+      label: "Payer",
+      value:
+        parcel.payer === "sender"
+          ? `Sender - ${parcel.sender_name}`
+          : `Receiver - ${parcel.receiver_name}`,
+    },
+    {
+      label: "Payment method",
+      value: parcel.payment_method === "bank_transfer" ? "Bank Transfer" : "Wallet",
+    },
+  ]
+  const deliveryInfo = [
+    {
+      label: "Pay on delivery",
+      value: parcel.pay_on_delivery === "yes" ? "Yes" : "No",
+    },
+    {
+      label: "Amount",
+      value:
+        parcel.amount && parseFloat(parcel.amount) > 0
+          ? `₦${Number(parcel.amount).toLocaleString()}`
+          : "₦0",
+    },
+    {
+      label: "Delivery",
+      value: `₦${Number(parcel.delivery_fee).toLocaleString()}`,
+    },
+  ];
+  const timelineData = [
+    {
+      key: "ordered_at",
+      label: "Order Received",
+      location: parcel.sender_address,
+    },
+    {
+      key: "picked_up_at",
+      label: "Picked Up",
+      location: parcel.sender_address,
+    },
+    {
+      key: "in_transit_at",
+      label: "In Transit",
+      location: "Rider is on the way",
+    },
+    {
+      key: "delivered_at",
+      label: "Delivered",
+      location: parcel.receiver_address,
+    },
+  ];
+const [showRatingModal, setShowRatingModal] = useState(false)
+  const handleChatPress = () => {
+    console.log("going to chat room with", parcel?.accepted_bid?.rider?.id)
+    navigation.navigate("ChatRoom", {
+      chatId: parcel?.accepted_bid?.rider?.id,
+      rider: parcel?.accepted_bid?.rider,
+    });
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        
+
 
         <TouchableOpacity
           style={styles.headerButton}
@@ -77,7 +157,7 @@ export default function RideSummary() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.totalSection}>
           <View>
-            <Text style={styles.totalAmount}>22,000</Text>
+            <Text style={styles.totalAmount}>{(parseFloat(parcel?.amount) + parseFloat(parcel?.delivery_fee)).toLocaleString()}</Text>
           </View>
 
           <View>
@@ -119,7 +199,7 @@ export default function RideSummary() {
                       style={styles.icon as ImageStyle}
                     />
                     <View style={styles.dotLine} />
-                    <Text style={styles.addressText}>{senderAddress}</Text>
+                    <Text style={styles.addressText}>{parcel.sender_address}</Text>
                   </View>
                 </View>
 
@@ -133,7 +213,7 @@ export default function RideSummary() {
                       source={icons.receiverLocation}
                       style={styles.icon as ImageStyle}
                     />
-                    <Text style={styles.addressText}>{receiverAddress}</Text>
+                    <Text style={styles.addressText}>{parcel.receiver_address}</Text>
                   </View>
                 </View>
               </View>
@@ -141,7 +221,7 @@ export default function RideSummary() {
               <View style={styles.detailsGrid}>
                 {/* Sender Information Section */}
                 <View style={[styles.detailRow, styles.section]}>
-                  {deliveryDetails.senderInfo.map((item, index) => (
+                  {senderInfo.map((item, index) => (
                     <View key={index} style={styles.detailItem}>
                       <Text style={styles.detailLabel}>{item.label}</Text>
                       <Text style={styles.detailValue}>{item.value}</Text>
@@ -151,7 +231,7 @@ export default function RideSummary() {
 
                 {/* Payment Information Section */}
                 <View style={[styles.detailRow, styles.section]}>
-                  {deliveryDetails.paymentInfo.map((item, index) => (
+                  {paymentInfo.map((item, index) => (
                     <View key={index} style={styles.detailItem}>
                       <Text style={styles.detailLabel}>{item.label}</Text>
                       <Text style={styles.detailValue}>{item.value}</Text>
@@ -161,7 +241,7 @@ export default function RideSummary() {
 
                 {/* Delivery Information Section */}
                 <View style={[styles.detailRow, styles.section]}>
-                  {deliveryDetails.deliveryInfo.map((item, index) => (
+                  {deliveryInfo.map((item, index) => (
                     <View key={index} style={styles.detailItem}>
                       <Text style={styles.detailLabel}>{item.label}</Text>
                       <Text style={styles.detailValue}>{item.value}</Text>
@@ -172,37 +252,58 @@ export default function RideSummary() {
             </View>
           )}
         </View>
+        <View style={styles.bottomContainer}>
 
-        <View style={styles.riderSection}>
-          <RiderProfile
-            name="Malee Oladimeji"
-            rating={5}
-            image="/placeholder.svg"
-          />
+          <View style={styles.riderSection}>
+            <RiderProfile
+              name={parcel.accepted_bid.rider.name}
+              rating={5}
+              image="/placeholder.svg"
+              onChat={() => { handleChatPress() }}
+              onCall={() => { setShowContactModel(true) }}
+            />
 
-          <View style={styles.rideInfo}>
-            <View style={styles.rideDetail}>
-              <Icon name={icons.bike} size={20} color={colors.text.primary} />
-              <Text style={styles.rideDetailText}>Bike</Text>
-            </View>
-            <View style={styles.rideDetail}>
-              <Image source={icons.color} style={styles.icon as ImageStyle} />
-              <Text style={styles.rideDetailText}>Black</Text>
-            </View>
-            <View style={styles.rideDetail}>
-              <Image source={icons.time} style={styles.icon as ImageStyle} />
-              <Text style={styles.rideDetailText}>30 min</Text>
+            <View style={styles.rideInfo}>
+              <View style={styles.rideDetail}>
+                <Icon name={icons.bike} size={20} color={colors.text.primary} />
+                <Text style={styles.rideDetailText}>Bike</Text>
+              </View>
+              <View style={styles.rideDetail}>
+                <Image source={icons.color} style={styles.icon as ImageStyle} />
+                <Text style={styles.rideDetailText}>Black</Text>
+              </View>
+              <View style={styles.rideDetail}>
+                <Image source={icons.time} style={styles.icon as ImageStyle} />
+                <Text style={styles.rideDetailText}>30 min</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        <DeliveryTimeline />
-
-        <TouchableOpacity style={styles.reviewButton}>
+          <DeliveryTimeline parcel={parcel} timelineData={timelineData} />
+          <TouchableOpacity style={styles.reviewButton} onPress={() => setShowRatingModal(true)}>
           <Text style={styles.reviewButtonText}>Write a review</Text>
         </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+      <ContactReceiverPopup
+        visible={showContactModel}
+        onClose={() => setShowContactModel(false)}
+        name={parcel?.accepted_bid?.rider.name ?? ""}
+        phone={parcel?.accepted_bid?.rider.phone ?? ""}
+        email={""} // or from rider if available
+        address={parcel?.receiver_address ?? ""}
+        onCall={() => {
+          console.log(`Calling ${parcel?.accepted_bid?.rider.name}...`);
+        }}
+      />
+
+<RatingModal
+parcelId={parcel.id}
+riderId={parcel.accepted_bid.rider.id}
+onClose={() => setShowRatingModal(false)}
+visible={showRatingModal}
+/>
+    </ScrollView>
+    </SafeAreaView >
   );
 }
 
@@ -261,18 +362,20 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row-reverse",
     borderRadius: 20,
-    width: "90%",
+    width: "95%",
     gap: 27,
-    margin: "auto",
+    justifyContent: 'space-around',
+    // margin: "auto",
+    marginHorizontal: theme.spacing.sm
   },
   totalLabel: {
-    fontSize: theme.fontSizes.md,
+    fontSize: 15,
     color: colors.text.secondary,
     marginBottom: theme.spacing.xs,
     fontWeight: "800",
   },
   totalAmount: {
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: "900",
     color: "#800080",
     marginBottom: theme.spacing.sm,
@@ -281,6 +384,7 @@ const styles = StyleSheet.create({
   deliveryFeeNote: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: 'flex-start'
   },
   greenDot: {
     width: 8,
@@ -291,18 +395,20 @@ const styles = StyleSheet.create({
   },
   deliveryFeeText: {
     color: "#008000",
-    fontSize: theme.fontSizes.sm,
+    fontSize: 12
   },
 
   card: {
     backgroundColor: colors.white,
     marginVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.lg,
-    elevation: 2,
-    shadowColor: colors.white,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowColor: "#535353",
+    shadowOffset: {
+      width: 10,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 30,
     width: "94%",
     margin: "auto",
   },
@@ -336,7 +442,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.sm,
   },
   section: {
-    borderWidth: 0,
+    borderWidth: 1,
     borderColor: "#C3C3C3",
     borderStyle: "dashed",
     width: "100%",
@@ -350,26 +456,45 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xl,
   },
   detailLabel: {
-    color: theme.colors.black,
+    color: '#00000080',
+    fontSize: 11
   },
   detailValue: {
     color: theme.colors.black,
     fontWeight: "bold",
     maxWidth: "80%",
     textAlign: "right",
+    fontSize: 11
   },
 
   riderSection: {
-    backgroundColor: colors.white,
+    // backgroundColor: colors.white,
     borderTopLeftRadius: theme.borderRadius.lg,
     borderTopRightRadius: theme.borderRadius.lg,
-    elevation: 2,
+    // elevation: 2,
     width: "94%",
+    borderRadius: 20,
+    marginTop: 10,
     alignSelf: "center",
+  },
+  bottomContainer: {
+    backgroundColor: colors.white,
+    marginHorizontal: 12,
+    shadowColor: "#535353",
+    shadowOffset: {
+      width: 10,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 30,
+    elevation: 10, // For Android
+    borderRadius: 20,
+    marginBottom: 140,
+    paddingBottom: 20
   },
   rideInfo: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     padding: theme.spacing.lg,
     borderTopWidth: 0,
     borderTopColor: colors.white,
@@ -386,10 +511,12 @@ const styles = StyleSheet.create({
   reviewButton: {
     backgroundColor: "#800080",
     padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 15,
     alignItems: "center",
     marginHorizontal: theme.spacing.md,
-    marginVertical: theme.spacing.xl,
+    // marginVertical: theme.spacing.xl,
+    // marginBottom:150
+
   },
   reviewButtonText: {
     color: colors.white,
@@ -430,7 +557,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
     color: colors.text.primary,
     lineHeight: 22,
     marginLeft: 14,
@@ -446,6 +573,7 @@ const styles = StyleSheet.create({
     borderStyle: "dotted",
     borderLeftWidth: 2,
     borderColor: "black",
+    zIndex: 1
   },
   receiverContainer: {
     marginTop: theme.spacing.sm,

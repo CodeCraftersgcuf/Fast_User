@@ -1,122 +1,155 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { colors } from "../constants/colors";
+import { theme } from "../constants/theme";
 
-export function DeliveryTimeline() {
-  const timelineData = [
-    {
-      date: 'Feb 23',
-      time: '01:23 AM',
-      status: 'User ordered a delivery',
-      location: 'Iseyin, Oyo state',
-      completed: true,
-    },
-    {
-      date: 'Feb 23',
-      time: '01:23 AM',
-      status: 'Package picked up',
-      location: 'Iseyin, Oyo state',
-      completed: true,
-    },
-    {
-      date: 'Feb 23',
-      time: '01:23 AM',
-      status: 'Package in transit',
-      location: 'Iseyin, Oyo state',
-      completed: true,
-    },
-    {
-      date: 'Feb 23',
-      time: '01:23 AM',
-      status: 'Package delivered',
-      location: 'Iseyin, Oyo state',
-      completed: false,
-    },
-  ];
+type TimelineItem = {
+  key: string;
+  label: string;
+  location: string;
+};
 
-  return (
-    <View style={styles.container}>
-      {timelineData.map((item, index) => (
-        <View key={index} style={styles.timelineItem}>
-          <View style={styles.timeSection}>
-            <Text style={styles.date}>{item.date}</Text>
-            <Text style={styles.time}>{item.time}</Text>
-          </View>
-          
-          <View style={styles.statusSection}>
-            <View style={[
-              styles.dot,
-              { backgroundColor: item.completed ? '#9C27B0' : '#E0E0E0' }
-            ]} />
-            {index !== timelineData.length - 1 && (
-              <View style={[
-                styles.line,
-                { backgroundColor: item.completed ? '#9C27B0' : '#E0E0E0' }
-              ]} />
-            )}
-          </View>
-          
-          <View style={styles.contentSection}>
-            <Text style={styles.status}>{item.status}</Text>
-            <Text style={styles.location}>{item.location}</Text>
-          </View>
-        </View>
-      ))}
-    </View>
-  );
+interface DeliveryTimelineProps {
+  timelineData: TimelineItem[];
+  parcel: any;
 }
 
+export const DeliveryTimeline: React.FC<DeliveryTimelineProps> = ({ timelineData, parcel }) => {
+  const formatDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString() : "";
+  const formatTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+
+  return (
+    <View style={styles.timelineContainer}>
+      <Text style={styles.timelineTitle}>Delivery Timeline</Text>
+
+      {timelineData.map((item, index) => {
+        const timeValue = parcel[item.key];
+        const isLast = index === timelineData.length - 1;
+        const isCompleted = !!timeValue;
+        const date = formatDate(timeValue);
+        const time = formatTime(timeValue);
+
+        return (
+          <View key={item.key} style={styles.timelineItem}>
+            <View style={styles.timelineLeft}>
+              <Text style={styles.timelineDate}>{date}</Text>
+              <Text style={styles.timelineTime}>{time}</Text>
+            </View>
+            <View style={styles.timelineDot}>
+              <View
+                style={[
+                  styles.dot,
+                  isCompleted ? styles.dotActive : styles.dotInactive,
+                ]}
+              >
+                {isCompleted && <View style={styles.innerDot} />}
+              </View>
+              {!isLast && (
+                <View
+                  style={[
+                    styles.timelineLine,
+                    isCompleted ? styles.lineActive : styles.lineInactive,
+                  ]}
+                />
+              )}
+            </View>
+            <View style={styles.timelineContent}>
+              <Text style={styles.timelineText}>{item.label}</Text>
+              <Text style={styles.timelineLocation}>{item.location}</Text>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    padding: 16,
-    width: '94%',
-    alignSelf: 'center'
+  timelineContainer: {
+    backgroundColor: colors.white,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    margin: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    marginBottom: 0,
+  },
+  timelineTitle: {
+    fontSize: theme.fontSizes.md,
+    fontWeight: "600",
+    color: colors.black,
+    marginBottom: theme.spacing.lg,
   },
   timelineItem: {
-    flexDirection: 'row',
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
   },
-  timeSection: {
-    width: 80,
+  timelineLeft: {
+    width: 70,
   },
-  date: {
-    fontSize: 14,
-    color: '#333',
-  },
-  time: {
+  timelineDate: {
     fontSize: 12,
-    color: '#666',
+    color: "#888",
   },
-  statusSection: {
-    alignItems: 'center',
-    marginRight: 12,
+  timelineTime: {
+    fontSize: 12,
+    color: "#555",
+  },
+  timelineDot: {
+    width: 30,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    position: "relative",
   },
   dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#9C27B0',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    zIndex: 1,
   },
-  line: {
-    width: 0.5,
+  dotActive: {
+    borderColor: colors.primary,
+  },
+  dotInactive: {
+    borderColor: "#ccc",
+  },
+  innerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  timelineLine: {
+    position: "absolute",
+    top: 16,
+    width: 2,
+    height: 40,
+    backgroundColor: "#ccc",
+    zIndex: 0,
+  },
+  lineActive: {
+    backgroundColor: colors.primary,
+  },
+  lineInactive: {
+    backgroundColor: "#ccc",
+  },
+  timelineContent: {
     flex: 1,
-    backgroundColor: '#C3C3C3',
-    marginVertical: 4,
+    paddingLeft: 10,
   },
-  contentSection: {
-    flex: 1,
-  },
-  status: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
-  },
-  location: {
+  timelineText: {
     fontSize: 12,
-    color: '#666',
+    fontWeight: "bold",
+    color: "#333",
+  },
+  timelineLocation: {
+    fontSize: 10,
+    color: "#888",
   },
 });

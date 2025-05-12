@@ -5,6 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { GradientBackground } from './../../components/BackgroundGradient';
@@ -75,68 +76,70 @@ const SignUp = () => {
   return (
     <GradientBackground>
       <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Create an Account</Text>
-          <Text style={styles.subtitle}>Create an account with your details</Text>
+        <ScrollView>
+          <View style={styles.content}>
+            <Text style={styles.title}>Create an Account</Text>
+            <Text style={styles.subtitle}>Create an account with your details</Text>
 
-          <View style={styles.form}>
+            <View style={styles.form}>
 
 
-            <View style={styles.header}>
-              <Text style={styles.headerText}>Got an account ? <Text>Login Here </Text> </Text>
+              <View style={styles.header}>
+                <Text style={styles.headerText}>Got an account ? <Text>Login Here </Text> </Text>
 
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}
-                style={styles.loginButton}>
-                <Text style={styles.loginLink}>Login</Text>
-              </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('Login')}
+                  style={styles.loginButton}>
+                  <Text style={styles.loginLink}>Login</Text>
+                </TouchableOpacity>
+              </View>
+              <FormInput
+                label="Full Name"
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Enter full name"
+                autoCapitalize="words"
+              />
+              <FormInput
+                label="Phone Number"
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Enter phone number"
+                keyboardType="phone-pad"
+              />
+
+              <FormInput
+                label="Email Address"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter email address"
+                keyboardType="email-address"
+              />
+              <PasswordInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter password"
+              />
+
+              <Button
+                title={isSigningUp ? "Creating Account..." : "Create an Account"}
+                onPress={() => mutateSignUp({
+                  name: fullName,
+                  phone,
+                  email,
+                  password,
+                })}
+                disabled={!fullName || !phone || !email || !password || isSigningUp}
+              />
+
+              <Text style={styles.termsText}>
+                By continuing you agree with Fast Logistics{' '}
+                <Text style={styles.link}>terms of agreement</Text> and{' '}
+                <Text style={styles.link}>privacy policy</Text>
+              </Text>
             </View>
-            <FormInput
-              label="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-              placeholder="Enter full name"
-              autoCapitalize="words"
-            />
-            <FormInput
-              label="Phone Number"
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter phone number"
-              keyboardType="phone-pad"
-            />
-
-            <FormInput
-              label="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter email address"
-              keyboardType="email-address"
-            />
-            <PasswordInput
-              label="Password"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter password"
-            />
-
-            <Button
-              title={isSigningUp ? "Creating Account..." : "Create an Account"}
-              onPress={() => mutateSignUp({
-                name: fullName,
-                phone,
-                email,
-                password,
-              })}
-              disabled={!fullName || !phone || !email || !password || isSigningUp}
-            />
-
-            <Text style={styles.termsText}>
-              By continuing you agree with Fast Logistics{' '}
-              <Text style={styles.link}>terms of agreement</Text> and{' '}
-              <Text style={styles.link}>privacy policy</Text>
-            </Text>
           </View>
-        </View>
+        </ScrollView>
         <Toast />
       </SafeAreaView>
     </GradientBackground>
@@ -154,14 +157,14 @@ const styles = StyleSheet.create({
 
   },
   title: {
-    fontSize: 40,
+    fontSize: 30,
     fontWeight: 'bold',
     color: colors.grey,
     marginBottom: 18,
     textAlign: 'left'
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.lightgrey,
     opacity: 0.8,
     marginBottom: 20,
@@ -186,9 +189,9 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: colors.grey,
-    padding: 14,
+    padding: 12,
     borderRadius: 50,
-    width: 70
+    width: 60
   },
   loginLink: {
     color: colors.black,

@@ -194,9 +194,16 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
   }
 
   const handleTrackParcel = () => {
-    setDeliveryStatus("Delivered")
+    // setDeliveryStatus("Delivered")
+    navigation.navigate("DeliveryDetails", { delivery: parcelData?.data })
   }
-
+  const truncateWords = (text: string, maxWords: number): string => {
+    if (!text) return "";
+    const words = text.trim().split(/\s+/);
+    return words.length > maxWords
+      ? words.slice(0, maxWords).join(" ") + "..."
+      : text;
+  };
   const handleDeliveryDetails = () => {
     navigation.navigate("DeliveredSummary", { rideId })
   }
@@ -215,7 +222,7 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
 
       <ScrollView style={styles.content} bounces={false}>
         <View style={styles.card}>
-          {!showCustomerCode && !showConfirmationModal && (
+          {/* {!showCustomerCode && !showConfirmationModal && (
             <View style={styles.notificationContainer}>
               <View style={styles.checkIconContainer}>
                 <Icon name="checkmark" size={20} color="#FFFFFF" />
@@ -224,7 +231,7 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
                 Your rider has arrived at your destination, input the confirmation code to confirm
               </Text>
             </View>
-          )}
+          )} */}
 
           <View style={styles.mapContainer}>
             {routeCoordinates ? (
@@ -259,8 +266,8 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
               </Text>
             )}
 
-            <View style={[styles.statusBadge, deliveryStatus === "Delivered" && styles.deliveredStatusBadge]}>
-              <Text style={styles.statusText}>{deliveryStatus}</Text>
+            <View style={[styles.statusBadge, parcelData?.data?.status === "delivered" && styles.deliveredStatusBadge]}>
+              <Text style={styles.statusText}>{parcelData?.data?.status.toUpperCase()}</Text>
             </View>
             {showCustomerCode && (
               <View style={styles.customerCodeBadge}>
@@ -278,11 +285,11 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
             <View style={styles.addressColumns}>
               <View style={styles.addressColumn}>
                 <Text style={styles.addressLabel}>From</Text>
-                <Text style={styles.addressValue}>{parcelData?.data?.sender_address ?? "N/A"}</Text>
+                <Text style={styles.addressValue}>{truncateWords(parcelData?.data?.sender_address, 2) ?? "N/A"}</Text>
               </View>
               <View style={styles.addressColumn}>
                 <Text style={styles.addressLabel}>To</Text>
-                <Text style={styles.addressValue}>{parcelData?.data?.receiver_address ?? "N/A"}</Text>
+                <Text style={styles.addressValue}>{truncateWords(parcelData?.data?.receiver_address, 2) ?? "N/A"}</Text>
               </View>
             </View>
 
@@ -309,7 +316,7 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
             </View>
           </View>
 
-          <TouchableOpacity style={styles.viewHistoryButton}>
+          <TouchableOpacity style={styles.viewHistoryButton} onPress={() => navigation.navigate("RideSummary", { parcel: parcelData?.data })}>
             <Text style={styles.viewHistoryButtonText}>View full history</Text>
           </TouchableOpacity>
 
@@ -380,27 +387,31 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
+       {
+        parcelData?.data?.status != "delivered" && (
+           <TouchableOpacity
           style={styles.trackButton}
-          onPress={deliveryStatus === "In Transit" ? handleTrackParcel : undefined}
+          onPress={handleTrackParcel}
         >
           <View style={styles.trackButtonIcon}>
             <Icon name="bicycle" size={24} color="#FFFFFF" />
           </View>
-          <Text style={styles.trackButtonText}>Track {deliveryStatus === "In Transit" ? "Rider" : "Rider"}</Text>
+          <Text style={styles.trackButtonText}>Track {deliveryStatus == "ordered" ? "Rider" : "Rider"}</Text>
           <View style={styles.chevronContainer}>
             <Icon name="chevron-forward" size={16} color="#800080" />
             <Icon name="chevron-forward" size={16} color="#800080" style={styles.middleChevron} />
             <Icon name="chevron-forward" size={16} color="#800080" />
           </View>
         </TouchableOpacity>
+        )
+       }
 
-        {showInputCodeButton && deliveryStatus === "In Transit" ? (
+        {parcelData?.data && parcelData?.data?.status === "ordered" ? (
           <TouchableOpacity style={styles.inputCodeButton} onPress={handleInputCode}>
-            <Text style={styles.inputCodeButtonText}>Input Code</Text>
+            <Text style={styles.inputCodeButtonText}>Show Code</Text>
           </TouchableOpacity>
-        ) : deliveryStatus === "Delivered" ? (
-          <TouchableOpacity style={styles.deliveryDetailsButton} onPress={handleDeliveryDetails}>
+        ) : parcelData?.data && parcelData?.data?.status === "delivered" ? (
+          <TouchableOpacity style={styles.deliveryDetailsButton} onPress={() => navigation.navigate("RideSummary", { parcel: parcelData?.data })}>
             <Text style={styles.deliveryDetailsButtonText}>Delivery Details</Text>
           </TouchableOpacity>
         ) : null}
@@ -416,8 +427,10 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
                 <Icon name="close" size={24} color="#000000" />
               </TouchableOpacity>
             </View>
+            <Text style={styles.confirmationModalTitle2}>Show this Code to Rider for input</Text>
 
-            <View style={styles.codeInputContainer}>
+
+            {/* <View style={styles.codeInputContainer}>
               <TextInput
                 style={styles.codeInput}
                 value={confirmationCode}
@@ -430,14 +443,14 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
               {confirmationCode.length === 0 && (
                 <Animated.View style={[styles.codeCursor, { opacity: cursorOpacity }]} />
               )}
-            </View>
+            </View> */}
 
-            <Text style={styles.codeInputLabel}>Input code from Rider</Text>
+            <Text style={styles.codeInputLabel}>{parcelData?.data?.pickup_code}</Text>
 
             <TouchableOpacity
-              style={[styles.continueButton, confirmationCode.length === 0 && styles.disabledButton]}
+              style={[styles.continueButton]}
               onPress={handleConfirmCode}
-              disabled={confirmationCode.length === 0}
+            // disabled={confirmationCode.length === 0}
             >
               <Text style={styles.continueButtonText}>Continue</Text>
             </TouchableOpacity>
@@ -515,7 +528,7 @@ const styles = StyleSheet.create({
   },
   notificationText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 11,
     color: "#333333",
     lineHeight: 20,
   },
@@ -593,12 +606,12 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   addressLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666666",
     marginBottom: 4,
   },
   addressValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#000000",
   },
   timeColumns: {
@@ -611,12 +624,12 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   timeLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666666",
     marginBottom: 4,
   },
   timeValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#000000",
   },
   paymentColumns: {
@@ -628,12 +641,12 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   paymentLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666666",
     marginBottom: 4,
   },
   paymentValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#000000",
   },
   viewHistoryButton: {
@@ -649,7 +662,7 @@ const styles = StyleSheet.create({
     height: 40,
     position: "relative",
     marginBottom: 16,
-    paddingHorizontal: 16,
+    // paddingHorizontal: 16,
   },
   progressLineContainer: {
     position: "absolute",
@@ -828,6 +841,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#000000",
   },
+  confirmationModalTitle2: {
+    fontSize: 11,
+    fontWeight: "300",
+    marginTop: -30,
+    color: "#000000",
+  },
   closeModalButton: {
     width: 40,
     height: 40,
@@ -863,7 +882,7 @@ const styles = StyleSheet.create({
     left: "50%",
   },
   codeInputLabel: {
-    fontSize: 14,
+    fontSize: 24,
     color: "#666666",
     textAlign: "center",
     marginBottom: 24,

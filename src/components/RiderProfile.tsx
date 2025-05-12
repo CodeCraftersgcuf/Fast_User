@@ -25,8 +25,8 @@ interface RiderProfileProps {
   onCall?: () => void;
 }
 
-export function RiderProfile({ 
-  name, 
+export function RiderProfile({
+  name,
   rating,
   onChat,
   onCall,
@@ -36,34 +36,37 @@ export function RiderProfile({
       <View style={styles.content}>
         <View style={styles.profileSection}>
           <Image
-           source={imageSource}
+            source={imageSource}
             style={styles.profileImage}
           />
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{name}</Text>
             <View style={styles.ratingContainer}>
               {[...Array(rating)].map((_, index) => (
-            
+
                 <Icon
-                key={index}
-                name={icons.star}
-                size={16}
-                color={colors.primary}
-              />
+                  key={index}
+                  name={icons.star}
+                  size={16}
+                  color={colors.primary}
+                />
               ))}
             </View>
           </View>
         </View>
-        
+
         <View style={styles.actions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.actionButton}
             onPress={onChat}
             accessibilityLabel="Chat with rider"
           >
-             <Icon name={icons.chat} size={24} color={colors.primary} />
+            <Image
+              source={icons.chats}
+              style={styles.actionIcon as ImageStyle}
+            />
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.actionButton}
             onPress={onCall}
             accessibilityLabel="Call rider"
@@ -76,7 +79,7 @@ export function RiderProfile({
         </View>
       </View>
 
-      
+
     </View>
   );
 }
@@ -85,11 +88,11 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.white,
     overflow: 'hidden',
- 
+
     ...Platform.select({
       ios: {
         shadowColor: colors.white
-       
+
       },
       android: {
         elevation: 0,

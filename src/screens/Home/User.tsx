@@ -155,7 +155,9 @@ export default function User() {
   const formatStatus = (status: string): "Ordered" | "Picked up" | "In Transit" | "Delivered" => {
     switch (status) {
       case "ordered":
-        return "Picked up"; // or "Ordered" based on your UX
+        return "Ordered"; // or "Ordered" based on your UX
+      case "picked_up":
+        return "Picked up";
       case "in_transit":
         return "In Transit";
       case "delivered":
@@ -321,6 +323,8 @@ export default function User() {
                 riderRating={parceldata.data.rider?.rating ?? 5}
                 onPress={() => handleDeliveryPress(parceldata.data)} onChatPress={() => console.log("Chat with rider")}
                 onCallPress={() => console.log("Call rider")}
+                paymentMethod={parceldata.data.payment_method}
+                total={(parseFloat(parceldata.data.amount) + parseFloat(parceldata.data.delivery_fee)).toLocaleString()}
               />
             )}
           </View>

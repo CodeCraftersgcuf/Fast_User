@@ -92,7 +92,7 @@ export default function RiderBids({ route }: { route: { params: { amount: string
       amount,
       parcel_id,
       bidId: rider.bidId, // ✅ Pass it forward
-      
+
     })
   }
 

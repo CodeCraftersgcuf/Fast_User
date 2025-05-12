@@ -41,7 +41,7 @@ export default function ChatRoomScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, "ChatRoom">>();
   const { chatId } = route.params; // ✅ getting id passed
-
+  console.log("🔹 Chat ID:", chatId);
   const [token, setToken] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);

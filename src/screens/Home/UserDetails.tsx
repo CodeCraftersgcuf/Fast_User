@@ -28,6 +28,8 @@ export default function UserDetails({ route }: { route: any }) {
   const formatStatus = (status: string): "Ordered" | "Picked up" | "In Transit" | "Delivered" => {
     switch (status) {
       case "ordered":
+        return "Ordered";
+      case "picked_up":
         return "Picked up";
       case "in_transit":
         return "In Transit";
@@ -37,7 +39,7 @@ export default function UserDetails({ route }: { route: any }) {
         return "Ordered";
     }
   };
- const onChatPress = () => {
+  const onChatPress = () => {
     // setSelectedDelivery(item);
     console.log("Chat Clicked", parcel);
     navigation.navigate(
@@ -76,7 +78,7 @@ export default function UserDetails({ route }: { route: any }) {
   return (
     <GradientBackground>
       <SafeAreaView style={styles.safeArea}>
-        <Header title="Delivery Details" showBackButton={true} onBackPress={handleBackPress} light={true} />
+        <Header title="Ride Details" showBackButton={true} onBackPress={handleBackPress} light={true} />
 
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
           <DeliveryCard
@@ -89,8 +91,11 @@ export default function UserDetails({ route }: { route: any }) {
             riderName={parcel.rider?.name ?? "Not Assigned"}
             riderRating={parcel.rider?.rating ?? 5}
             onPress={() => handleDeliveryPress(`ORD-${parcel.id}`)}
-            onChatPress={ onChatPress} // 👈 trigger modal
+            onChatPress={onChatPress} // 👈 trigger modal
             onCallPress={() => setSelectedDelivery(parcel)} // 👈 trigger modal
+            paymentMethod={parcel.payment_method}
+            total={(parseFloat(parcel.amount) + parseFloat(parcel.delivery_fee)).toLocaleString()}
+
           />
 
           <View style={styles.timelineContainer}>
@@ -124,8 +129,8 @@ export default function UserDetails({ route }: { route: any }) {
             })}
           </View>
           <ContactReceiverPopup
-    visible={!!selectedDelivery}            
-    onClose={() => setSelectedDelivery(null)} // or a dedicated modal toggle if you want to keep this optional
+            visible={!!selectedDelivery}
+            onClose={() => setSelectedDelivery(null)} // or a dedicated modal toggle if you want to keep this optional
             name={parcel.receiver_name}
             phone={parcel.receiver_phone}
             email={parcel.rider?.email ?? ""}

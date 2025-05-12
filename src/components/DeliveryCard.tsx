@@ -15,6 +15,8 @@ interface DeliveryCardProps {
   estimatedDelivery: Date
   riderName: string
   riderRating: number
+  total:string
+  paymentMethod:string
   onPress?: () => void
   onChatPress?: () => void
   onCallPress?: () => void
@@ -32,7 +34,17 @@ export function DeliveryCard({
   onPress,
   onChatPress,
   onCallPress,
+  total,
+  paymentMethod,
 }: DeliveryCardProps) {
+  const truncateWords = (text: string, maxWords: number): string => {
+    if (!text) return "";
+    const words = text.trim().split(/\s+/);
+    return words.length > maxWords
+      ? words.slice(0, maxWords).join(" ") + "..."
+      : text;
+  };
+
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.header}>
@@ -45,11 +57,11 @@ export function DeliveryCard({
       <View style={styles.section}>
         <View style={styles.column}>
           <Text style={styles.label}>From</Text>
-          <Text style={styles.value}>{fromAddress}</Text>
+          <Text style={styles.value}>{truncateWords(fromAddress, 2)}</Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>To</Text>
-          <Text style={styles.value}>{toAddress}</Text>
+          <Text style={styles.value}>{truncateWords(toAddress, 2)}</Text>
         </View>
       </View>
 
@@ -63,22 +75,34 @@ export function DeliveryCard({
           <Text style={styles.value}>{formatTime(estimatedDelivery)}</Text>
         </View>
       </View>
+      <View style={styles.section}>
+        <View style={styles.column}>
+          <Text style={styles.label}>Sub Total</Text>
+          <Text style={styles.value}>{total}</Text>
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.label}>Payment method</Text>
+          <Text style={styles.value}>{paymentMethod}</Text>
+        </View>
+      </View>
 
       <View style={styles.progressContainer}>
         <View style={styles.progressTrack}>
-          {["Order Received", "Picked up", "In transit", "Delivered"].map((step, index) => (
+          {["Ordered", "Picked up", "In transit", "Delivered"].map((step, index) => (
             <React.Fragment key={step}>
               <View
                 style={[
                   styles.progressDot,
                   (status === "In Transit" && index <= 2) ||
-                  (status === "Picked up" && index <= 1) ||
-                  (status === "Delivered" && index <= 3)
+                    (status === "Ordered" && index <= 0) ||
+                    (status === "Picked up" && index <= 1) ||
+                    (status === "Delivered" && index <= 3)
                     ? styles.activeDot
                     : styles.inactiveDot,
                 ]}
               >
                 {((status === "In Transit" && index <= 2) ||
+                  (status === "Ordered" && index <= 0) ||
                   (status === "Picked up" && index <= 1) ||
                   (status === "Delivered" && index <= 3)) && <View style={styles.innerDot} />}
               </View>
@@ -86,9 +110,10 @@ export function DeliveryCard({
                 <View
                   style={[
                     styles.progressLine,
-                    (status === "In Transit" && index <= 1) ||
-                    (status === "Picked up" && index === 0) ||
-                    (status === "Delivered" && index <= 2)
+                    (status === "In Transit" && index <= 2) ||
+                      (status === "Picked up" && index === 1) ||
+                      (status === "Ordered" && index === 0) ||
+                      (status === "Delivered" && index <= 3)
                       ? styles.activeLine
                       : styles.inactiveLine,
                   ]}

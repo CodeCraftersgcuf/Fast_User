@@ -10,11 +10,13 @@ import Icon from "react-native-vector-icons/Ionicons"
 
 interface RatingModalProps {
   visible: boolean
+  riderId: string
+  parcelId: string
   onClose: () => void
   onComplete: () => void
 }
 
-export function RatingModal({ visible, onClose, onComplete }: RatingModalProps) {
+export function RatingModal({ visible, onClose, onComplete, riderId, parcelId }: RatingModalProps) {
   const [rating, setRating] = useState(4)
   const [review, setReview] = useState("")
 
