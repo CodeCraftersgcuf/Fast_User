@@ -19,11 +19,16 @@ export default function RideConfirmationScreen({ route }: { route: { params: { a
 
   const handleTrackRider = () => {
     setShowConfirmationModal(false)
-    navigation.navigate("RideDetails", {
-      orderId: "ORD-12ESCJK3K",
-      status: "in_transit",
-      amount,
-    })
+  navigation.navigate("Deliveries", {
+  screen: "RideHistory",
+  params: {
+    orderId: "ORD-12ESCJK3K",
+    status: "in_transit",
+    amount,
+  },
+});
+
+
   }
 
   return (

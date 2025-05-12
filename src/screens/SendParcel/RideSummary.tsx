@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image, Modal } from "react-native"
 import Icon from "react-native-vector-icons/Ionicons"
-import { useNavigation } from "@react-navigation/native"
+import { CommonActions, useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { SendParcelStackParamList } from "../../types/navigation"
 import { useOrder } from "../../contexts/OrderContext"
@@ -100,7 +100,11 @@ export default function RidesSummary({
 
   const handleTrackRider = () => {
     setShowConfirmationModal(false)
-    navigation.navigate("RideHistory", { parcel_id });
+    console.log("Navigating to Delivery History");
+   navigation.navigate("Home");
+
+
+
 
   }
 

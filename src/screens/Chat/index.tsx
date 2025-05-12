@@ -30,6 +30,7 @@ import { useQuery } from "@tanstack/react-query"
 import { getChatInbox } from "../../utils/queries/accountQueries";
 import { getFromStorage } from "../../utils/storage";
 import Loader from "../../components/Loader";
+import dayjs from "dayjs";
 
 
 
@@ -84,11 +85,22 @@ export default function ChatScreen() {
       />
       <View style={styles.chatInfo}>
         <Text style={styles.chatName}>{item.name}</Text>
-        <Text style={styles.chatOrderId}>{item.email}</Text> {/* Show email or order id if available */}
+       <Text style={styles.chatOrderId}>
+  {item?.last_message?.message
+    ? item.last_message.message.length > 25
+      ? `${item.last_message.message.substring(0, 25)}...`
+      : item.last_message.message
+    : ""}
+</Text>
+ {/* Show email or order id if available */}
       </View>
       <View style={styles.chatMeta}>
         {/* Optional: show dummy time or you can remove */}
-        <Text style={styles.chatTime}>Just now</Text>
+     <Text style={styles.chatTime}>
+  {item?.last_message?.sent_at
+    ? dayjs(item.last_message.sent_at).format("h:mm A")
+    : ""}
+</Text>
       </View>
     </TouchableOpacity>
   );

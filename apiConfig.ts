@@ -27,12 +27,16 @@ const API_ENDPOINTS = {
     UpdateAddress: API_DOMAIN + "/address/update",
     DeleteAddress: API_DOMAIN + "/address/delete",
 
+
     ChatInbox: API_DOMAIN + "/chat/connected-riders",
     SingleChatInbox: API_DOMAIN + "/chat/messages",
     SendMessage: API_DOMAIN + "/chat/send",
 
     ParcelBidCreate: API_DOMAIN + "/parcel-bid/create-by-user",
     ActiveParcel: API_DOMAIN + "/sendparcel/get-active-parcel-user",
+    SubmitReview: API_DOMAIN + "/parcel-review/submit",
+    GetReview: (user_id: string | number) =>
+      `${API_DOMAIN}/parcel-review/${user_id}`,
 
     ParcelBidList: (id: number | string) =>
       `${API_DOMAIN}/parcel-bid/${id}/list`,
@@ -57,8 +61,8 @@ const API_ENDPOINTS = {
     SenderBank: (id: number | string) =>
       `${API_DOMAIN}/sendparcel/pay-by-bank-sender/${id}`,
 
-   RiderLocation: (id: number | string) =>
-  `${API_DOMAIN}/rider/location/${id}`,
+    RiderLocation: (id: number | string) =>
+      `${API_DOMAIN}/rider/location/${id}`,
 
 
     GetFaqs: API_DOMAIN + "/faqs/user",

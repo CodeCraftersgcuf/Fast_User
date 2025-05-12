@@ -387,26 +387,26 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-       {
-        parcelData?.data?.status != "delivered" && (
-           <TouchableOpacity
-          style={styles.trackButton}
-          onPress={handleTrackParcel}
-        >
-          <View style={styles.trackButtonIcon}>
-            <Icon name="bicycle" size={24} color="#FFFFFF" />
-          </View>
-          <Text style={styles.trackButtonText}>Track {deliveryStatus == "ordered" ? "Rider" : "Rider"}</Text>
-          <View style={styles.chevronContainer}>
-            <Icon name="chevron-forward" size={16} color="#800080" />
-            <Icon name="chevron-forward" size={16} color="#800080" style={styles.middleChevron} />
-            <Icon name="chevron-forward" size={16} color="#800080" />
-          </View>
-        </TouchableOpacity>
-        )
-       }
+        {
+          parcelData?.data?.status != "delivered" && (
+            <TouchableOpacity
+              style={styles.trackButton}
+              onPress={handleTrackParcel}
+            >
+              <View style={styles.trackButtonIcon}>
+                <Icon name="bicycle" size={24} color="#FFFFFF" />
+              </View>
+              <Text style={styles.trackButtonText}>Track {deliveryStatus == "ordered" ? "Rider" : "Rider"}</Text>
+              <View style={styles.chevronContainer}>
+                <Icon name="chevron-forward" size={16} color="#800080" />
+                <Icon name="chevron-forward" size={16} color="#800080" style={styles.middleChevron} />
+                <Icon name="chevron-forward" size={16} color="#800080" />
+              </View>
+            </TouchableOpacity>
+          )
+        }
 
-        {parcelData?.data && parcelData?.data?.status === "ordered" ? (
+        {parcelData?.data && parcelData?.data?.status !== "delivered" ? (
           <TouchableOpacity style={styles.inputCodeButton} onPress={handleInputCode}>
             <Text style={styles.inputCodeButtonText}>Show Code</Text>
           </TouchableOpacity>
@@ -422,41 +422,32 @@ export default function RideDetails({ route }: { route: { params: { rideId: stri
         <View style={styles.modalOverlay}>
           <View style={styles.confirmationModal}>
             <View style={styles.confirmationModalHeader}>
-              <Text style={styles.confirmationModalTitle}>Confirmation Code</Text>
+              <Text style={styles.confirmationModalTitle}>Delivery Code Confirmation</Text>
               <TouchableOpacity onPress={() => setShowConfirmationModal(false)} style={styles.closeModalButton}>
-                <Icon name="close" size={24} color="#000000" />
+                <Icon name="close" size={22} color="#555" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.confirmationModalTitle2}>Show this Code to Rider for input</Text>
 
+            <Text style={styles.helperText}>Give this code to the rider at pickup:</Text>
+            <View style={styles.codeBox}>
+              <Text style={styles.codeText}>{parcelData?.data?.pickup_code || "----"}</Text>
+            </View>
 
-            {/* <View style={styles.codeInputContainer}>
-              <TextInput
-                style={styles.codeInput}
-                value={confirmationCode}
-                onChangeText={setConfirmationCode}
-                keyboardType="number-pad"
-                maxLength={4}
-                autoFocus
-                caretHidden={confirmationCode.length > 0}
-              />
-              {confirmationCode.length === 0 && (
-                <Animated.View style={[styles.codeCursor, { opacity: cursorOpacity }]} />
-              )}
-            </View> */}
-
-            <Text style={styles.codeInputLabel}>{parcelData?.data?.pickup_code}</Text>
+            <Text style={[styles.helperText, { marginTop: 24 }]}>Give this code to the rider at delivery:</Text>
+            <View style={styles.codeBox}>
+              <Text style={styles.codeText}>{parcelData?.data?.delivery_code || "----"}</Text>
+            </View>
 
             <TouchableOpacity
-              style={[styles.continueButton]}
+              style={styles.continueButton}
               onPress={handleConfirmCode}
-            // disabled={confirmationCode.length === 0}
             >
               <Text style={styles.continueButtonText}>Continue</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
     </SafeAreaView>
   )
 }
@@ -816,90 +807,81 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 200, // Add space at the bottom for the keyboard
+    padding: 20,
   },
+
   confirmationModal: {
     width: "90%",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 14,
-    marginTop: 200,
-    zIndex: 1000
-
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
+
   confirmationModalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
+
   confirmationModalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#000000",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#333",
   },
-  confirmationModalTitle2: {
-    fontSize: 11,
-    fontWeight: "300",
-    marginTop: -30,
-    color: "#000000",
+
+  helperText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 6,
+    marginTop: 6,
   },
+
+  codeBox: {
+    backgroundColor: "#F3F3F3",
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  codeText: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#800080",
+    letterSpacing: 2,
+  },
+
   closeModalButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#f0f0f0",
   },
-  codeInputContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-    height: 60,
-    flexDirection: "row",
-  },
-  codeInputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  codeInput: {
-    fontSize: 36,
-    fontWeight: "600",
-    color: "#000000",
-    textAlign: "center",
-    minWidth: 40,
-    padding: 0,
-  },
-  codeCursor: {
-    width: 2,
-    height: 36,
-    backgroundColor: "#000000",
-    position: "absolute",
-    left: "50%",
-  },
-  codeInputLabel: {
-    fontSize: 24,
-    color: "#666666",
-    textAlign: "center",
-    marginBottom: 24,
-  },
+
   continueButton: {
     backgroundColor: "#800080",
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
+    marginTop: 30,
   },
+
   continueButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  disabledButton: {
-    backgroundColor: "#CCCCCC",
-  },
+
 })
 

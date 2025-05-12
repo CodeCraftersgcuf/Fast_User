@@ -214,14 +214,14 @@ export default function User() {
                 style={styles.balanceButton}
                 onPress={handleTopUp}
               >
-                <Icon name="arrow-up" size={16} color={colors.text.primary} style={{ transform: [{ rotate: '-45deg' }] }} />
+                <Icon name="arrow-up" size={16} color={colors.text.primary} style={{ transform: [{ rotate: '-315deg' }] }} />
                 <Text style={styles.balanceButtonText}>Top Up</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.balanceButton}
                 onPress={handleWithdraw}
               >
-                <Icon name="arrow-down" size={16} color={colors.text.primary} />
+                <Icon name="arrow-down" size={16} color={colors.text.primary} style={{ transform: [{ rotate: '-315deg' }] }}  />
                 <Text style={styles.balanceButtonText}>Withdraw</Text>
               </TouchableOpacity>
             </View>

@@ -217,7 +217,37 @@ export const getWithdraw = async ({
     token
   );
 };
+export const submitReview = async ({
+  data,
+  token,
+}: {
+  data: {
+    send_parcel_id: string | number; // 💡 Use send_parcel_id (as per backend)
+    rating: number;
+    review: string;
+  };
+  token: string;
+}) => {
+  return await apiCall(
+    API_ENDPOINTS.USER.SubmitReview,
+    "POST",
+    data,
+    token
+  );
+};
 
+export const getReview = async (
+  token: string,
+  user_id: string | number
+): Promise<any> => {
+  console.log("🔹 Sending Get Review Request with ID:", user_id);
+  return await apiCall(
+    API_ENDPOINTS.USER.GetReview(1), // ✅ call function, not string replace
+    "GET",
+    undefined,
+    token
+  );
+};
 export const getBuy = async ({
   token,
   id,
