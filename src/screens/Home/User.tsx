@@ -20,6 +20,8 @@ import { formatCurrency } from "../../utils/Fomatters";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../types";
+import { RefreshControl } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 
 type UserScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -30,6 +32,7 @@ type UserScreenNavigationProp = NativeStackNavigationProp<
 import { useQuery } from "@tanstack/react-query";
 import { getFromStorage } from "../../utils/storage";
 import { getActiveParcel, getBalance } from "../../utils/queries/accountQueries";
+import { ContactReceiverPopup } from "../../components/ContactReceiverPopup";
 
 
 
@@ -40,6 +43,19 @@ export default function User() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [userData, setUserData] = useState<any>(null); // You can type this more strictly later
   const [token, setToken] = useState<string | null>(null);
+const [refreshing, setRefreshing] = useState(false);
+const [showContactModal, setShowContactModal] = useState(false);
+const queryClient = useQueryClient();
+const onRefresh = async () => {
+  try {
+    setRefreshing(true);
+    await queryClient.invalidateQueries(); // Invalidate all queries
+  } catch (error) {
+    console.error("Error refreshing data:", error);
+  } finally {
+    setRefreshing(false);
+  }
+};
 
 
 
@@ -166,13 +182,23 @@ export default function User() {
         return "Ordered";
     }
   };
-
+  const onChatPress = () => {
+    // setSelectedDelivery(item);
+    console.log("Chat Clicked");
+    navigation.navigate(
+      "ChatRoom",
+      { chatId: parceldata?.data?.rider?.id },
+    );
+  };
   return (
     <GradientBackground>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.container}
           showsVerticalScrollIndicator={false}
+            refreshControl={
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+  }
         >
           {/* Header */}
           <View style={styles.header}>
@@ -221,7 +247,7 @@ export default function User() {
                 style={styles.balanceButton}
                 onPress={handleWithdraw}
               >
-                <Icon name="arrow-down" size={16} color={colors.text.primary} style={{ transform: [{ rotate: '-315deg' }] }}  />
+                <Icon name="arrow-down" size={16} color={colors.text.primary} style={{ transform: [{ rotate: '-315deg' }] }} />
                 <Text style={styles.balanceButtonText}>Withdraw</Text>
               </TouchableOpacity>
             </View>
@@ -321,14 +347,26 @@ export default function User() {
                 estimatedDelivery={new Date(parceldata.data.ordered_at)}
                 riderName={parceldata.data.rider?.name ?? "Not Assigned"}
                 riderRating={parceldata.data.rider?.rating ?? 5}
-                onPress={() => handleDeliveryPress(parceldata.data)} onChatPress={() => console.log("Chat with rider")}
-                onCallPress={() => console.log("Call rider")}
+                onPress={() => handleDeliveryPress(parceldata.data)} 
+                onChatPress={ onChatPress}
+                onCallPress={()=> setShowContactModal(true)}
                 paymentMethod={parceldata.data.payment_method}
                 total={(parseFloat(parceldata.data.amount) + parseFloat(parceldata.data.delivery_fee)).toLocaleString()}
               />
             )}
           </View>
         </ScrollView>
+         <ContactReceiverPopup
+                visible={showContactModal}
+                onClose={() => setShowContactModal(false)}
+                name={parceldata?.data?.rider.name ?? ""}
+                phone={parceldata?.data?.rider.phone ?? ""}
+                email={""} // or from rider if available
+                address={parceldata?.data?.receiver_address ?? ""}
+                onCall={() => {
+                  console.log(`Calling ${parceldata?.data?.rider.name}...`);
+                }}
+              />
       </SafeAreaView>
     </GradientBackground>
   );

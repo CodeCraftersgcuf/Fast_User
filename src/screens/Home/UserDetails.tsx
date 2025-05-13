@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from "react-native"
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from "react-native"
 import { GradientBackground } from "../../components/BackgroundGradient"
 import { DeliveryCard } from "../../components/DeliveryCard"
 import { Header } from "../../components/Headers"
@@ -23,6 +23,8 @@ export default function UserDetails({ route }: { route: any }) {
 
   const handleDeliveryPress = (orderId: string) => {
     console.log(`Delivery ${orderId} details pressed`)
+        navigation.navigate("DeliveryDetails", { delivery: parcel })
+
   }
 
   const formatStatus = (status: string): "Ordered" | "Picked up" | "In Transit" | "Delivered" => {
@@ -127,6 +129,9 @@ export default function UserDetails({ route }: { route: any }) {
                 </View>
               );
             })}
+             <TouchableOpacity style={styles.trackButton} onPress={() => handleDeliveryPress(parcel)}>
+                  <Text style={styles.trackButtonText}>Track Delivery</Text>
+                </TouchableOpacity>
           </View>
           <ContactReceiverPopup
             visible={!!selectedDelivery}
@@ -141,6 +146,7 @@ export default function UserDetails({ route }: { route: any }) {
               // Linking.openURL(`tel:${parcel.receiver_phone}`);
             }}
           />
+           
         </ScrollView>
       </SafeAreaView>
     </GradientBackground>
@@ -148,6 +154,18 @@ export default function UserDetails({ route }: { route: any }) {
 }
 
 const styles = StyleSheet.create({
+    trackButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginBottom: 10
+  },
+  trackButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   safeArea: {
     flex: 1,
     marginTop: theme.spacing.xl,

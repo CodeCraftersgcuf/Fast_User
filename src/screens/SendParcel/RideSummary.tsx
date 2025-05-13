@@ -92,6 +92,7 @@ export default function RidesSummary({
           text1: "Failed to accept bid",
           text2: error?.response?.data?.message || "Please try again later",
         });
+        console.log("❌ Error accepting bid:", error);
       },
     });
   };
@@ -101,7 +102,7 @@ export default function RidesSummary({
   const handleTrackRider = () => {
     setShowConfirmationModal(false)
     console.log("Navigating to Delivery History");
-   navigation.navigate("Home");
+    navigation.navigate("Home");
 
 
 
@@ -198,17 +199,11 @@ export default function RidesSummary({
             </View>
 
             <View style={styles.detailsSection}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Sender Name</Text>
-                <Text style={styles.detailValue}>{deliveryDetails.senderName || "Qamardeen Malik"}</Text>
+              <View style={styles.detailRow}><Text style={styles.detailLabel}>Sender Name</Text><Text style={styles.detailValue}>{deliveryDetails.senderName || "Qamardeen Malik"}</Text>
               </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Sender Phone</Text>
-                <Text style={styles.detailValue}>{deliveryDetails.senderPhone || "07030123456"}</Text>
+              <View style={styles.detailRow}><Text style={styles.detailLabel}>Sender Phone</Text><Text style={styles.detailValue}>{deliveryDetails.senderPhone || "07030123456"}</Text>
               </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Receiver Name</Text>
-                <Text style={styles.detailValue}>{deliveryDetails.receiverName || "Adebisi Lateefat"}</Text>
+              <View style={styles.detailRow}><Text style={styles.detailLabel}>Receiver Name</Text><Text style={styles.detailValue}>{deliveryDetails.receiverName || "Adebisi Lateefat"}</Text>
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Receiver Phone</Text>
@@ -285,7 +280,7 @@ export default function RidesSummary({
               </View>
             </View>
             <View style={styles.priceTag}>
-              <Text style={styles.priceText}>₦ {rider.price}</Text>
+              <Text style={styles.priceText}> {rider.price}</Text>
             </View>
           </View>
 
@@ -332,12 +327,12 @@ export default function RidesSummary({
               Your ride request has been sent successfully, your rider will arrive in approximately 20 mins
             </Text>
             <TouchableOpacity style={styles.trackRiderButton} onPress={handleTrackRider}>
-              <Text style={styles.trackRiderButtonText}>Track Rider</Text>
+              <Text style={styles.trackRiderButtonText}>Done</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-      <Toast /> {/* 👈 Add this at the end */}
+      <Toast />
     </SafeAreaView>
   )
 }

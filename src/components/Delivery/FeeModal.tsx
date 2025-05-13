@@ -73,7 +73,7 @@ export function FeeModal({ visible, onClose, onConfirm, amount, onAmountChange }
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "white",
     justifyContent: "flex-end",
   },
   modalContent: {

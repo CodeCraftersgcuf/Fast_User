@@ -372,6 +372,11 @@ export default function DeliveryDetails() {
 }
 
 const styles = StyleSheet.create({
+  iconMedium:{
+    width: 24,
+    height: 24,
+    tintColor: colors.white
+  },
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",

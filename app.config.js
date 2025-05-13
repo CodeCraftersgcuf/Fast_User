@@ -13,7 +13,7 @@ export default {
       resizeMode: "contain",
       backgroundColor: "#9C27B0"
     },
-    newArchEnabled: true,
+    newArchEnabled: false,
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: true,
@@ -42,7 +42,7 @@ export default {
     },
     extra: {
       eas: {
-        projectId: ""
+        projectId: "0d66524a-53c6-426d-8b9b-a44ae41e2870"
       },
       googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY
     }

@@ -430,76 +430,79 @@ export default function PaymentDetails() {
               </Text>
             </View>
           )}
+          <View style={styles.summaryContainer}>
 
-          <TouchableOpacity
-            style={styles.summaryButton}
-            onPress={() => setIsDeliverySummaryExpanded(!isDeliverySummaryExpanded)}
-          >
-            <Text style={styles.summaryButtonText}>Delivery Summary</Text>
-            <Icon name={isDeliverySummaryExpanded ? "chevron-up" : "chevron-down"} size={24} color="#000000" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.summaryButton}
+              onPress={() => setIsDeliverySummaryExpanded(!isDeliverySummaryExpanded)}
+            >
+              <Text style={styles.summaryButtonText}>Delivery Summary</Text>
+              <Icon name={isDeliverySummaryExpanded ? "chevron-up" : "chevron-down"} size={24} color="#000000" />
+            </TouchableOpacity>
 
-          {isDeliverySummaryExpanded && (
-            <View style={styles.summaryContent}>
-              <View style={styles.summaryItem}>
-                <View style={styles.summaryAddressItem}>
-                  <Icon name="location" size={20} color="#00A651" />
-                  <View style={styles.summaryAddressContent}>
-                    <Text style={styles.summaryLabel}>Sender Address</Text>
-                    <Text style={styles.summaryValue}>
-                      {deliveryDetails.senderAddress ||
-                        "No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo"}
-                    </Text>
+            {isDeliverySummaryExpanded && (
+              <View style={styles.summaryContent}>
+                <View style={styles.summaryItem}>
+                  <View style={styles.summaryAddressItem}>
+                    <Icon name="location" size={20} color="#00A651" />
+                    <View style={styles.summaryAddressContent}>
+                      <Text style={styles.summaryLabel}>Sender Address</Text>
+                      <Text style={styles.summaryValue}>
+                        {deliveryDetails.senderAddress ||
+                          "No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.summaryDivider} />
+                  <View style={styles.summaryAddressItem}>
+                    <Icon name="location" size={20} color="#FF0000" />
+                    <View style={styles.summaryAddressContent}>
+                      <Text style={styles.summaryLabel}>Receiver Address</Text>
+                      <Text style={styles.summaryValue}>
+                        {deliveryDetails.receiverAddress ||
+                          "No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo"}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryAddressItem}>
-                  <Icon name="location" size={20} color="#FF0000" />
-                  <View style={styles.summaryAddressContent}>
-                    <Text style={styles.summaryLabel}>Receiver Address</Text>
-                    <Text style={styles.summaryValue}>
-                      {deliveryDetails.receiverAddress ||
-                        "No 1, alobalowo street, off saki iseyin express way, Iseyin,Oyo"}
-                    </Text>
+                <View style={styles.summaryDetails}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Sender Name</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.senderName || "Qamardeen Malik"}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Sender Phone</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.senderPhone || "07030123456"}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Receiver Name</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.receiverName || "Adebisi Lateefat"}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Receiver Phone</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.receiverPhone || "07031234567"}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Parcel Name</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.parcelName || "Samsung Phone"}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Parcel Category</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.parcelCategory || "Electronics"}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Parcel Value</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.parcelValue || "100,000 - 200,000"}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Description</Text>
+                    <Text style={styles.summaryValue}>{deliveryDetails.description || "Nil"}</Text>
                   </View>
                 </View>
               </View>
-              <View style={styles.summaryDetails}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Sender Name</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.senderName || "Qamardeen Malik"}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Sender Phone</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.senderPhone || "07030123456"}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Receiver Name</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.receiverName || "Adebisi Lateefat"}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Receiver Phone</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.receiverPhone || "07031234567"}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Parcel Name</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.parcelName || "Samsung Phone"}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Parcel Category</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.parcelCategory || "Electronics"}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Parcel Value</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.parcelValue || "100,000 - 200,000"}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Description</Text>
-                  <Text style={styles.summaryValue}>{deliveryDetails.description || "Nil"}</Text>
-                </View>
-              </View>
-            </View>
-          )}
+            )}
+          </View>
+
         </View>
       </ScrollView>
 
@@ -585,6 +588,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+  summaryContainer:{
+    backgroundColor: "white",
+    marginTop: 20,
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -655,7 +662,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   selectButton: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "white",
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -674,19 +681,23 @@ const styles = StyleSheet.create({
   walletBalance: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#800080",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 8,
   },
   walletBalanceText: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
   },
   radioGroup: {
+    backgroundColor: "white",
     flexDirection: "row",
+    padding: 18,
+    borderRadius: 8,
     marginTop: 8,
   },
   radioOption: {
@@ -718,7 +729,7 @@ const styles = StyleSheet.create({
     color: "#333333",
   },
   input: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "white",
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -744,9 +755,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     marginTop: 16,
-    borderWidth: 1,
-    borderColor: "#EEEEEE",
-    marginBottom: 40,
+    // borderWidth: 1,
+    // borderColor: "#EEEEEE",
+    marginBottom: 10,
   },
   summaryButtonText: {
     fontSize: 16,
@@ -757,7 +768,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 8,
     padding: 16,
-    marginTop: 8,
+    // marginTop: 8,
     marginBottom: 40,
   },
   summaryItem: {
@@ -772,12 +783,17 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   summaryDivider: {
-    height: 1,
+    // height: 1,
     backgroundColor: "#EEEEEE",
     marginVertical: 12,
   },
   summaryDetails: {
     marginTop: 16,
+    borderWidth: .5,
+    borderStyle: "dashed",
+    borderColor: "#C3C3C3",
+    padding: 10,
+    borderRadius: 10
   },
   summaryRow: {
     flexDirection: "row",
@@ -785,11 +801,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   summaryLabel: {
-    fontSize: 14,
-    color: "#666666",
+    fontSize: 11,
+    color: "#00000080",
   },
   summaryValue: {
-    fontSize: 14,
+    fontSize: 11,
     color: "#333333",
     fontWeight: "500",
   },

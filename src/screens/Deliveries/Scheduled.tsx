@@ -38,10 +38,10 @@ const ScheduledDeliveries = ({ deliveries }: ScheduledDeliveriesProps) => {
         parcel_id: item.id,
       },
     });
-
+// onPress={() => handleDeliveryPress(item)}
   }
   const renderDeliveryItem = ({ item }: { item: DeliveryItem }) => (
-    <TouchableOpacity style={styles.deliveryCard} onPress={() => handleDeliveryPress(item)}>
+    <TouchableOpacity style={styles.deliveryCard} >
       <View style={styles.deliveryHeader}>
         <Text style={styles.orderId}>{item.id}</Text>
         <View style={styles.statusBadge}>
